@@ -4,8 +4,8 @@ import (
 	"errors"
 	verbositypkg "github.com/snapp-incubator/symspell/internal/verbosity"
 	"math"
+	"slices"
 	"sort"
-	"strings"
 )
 
 func (s *SymSpell) Lookup(
@@ -18,7 +18,8 @@ func (s *SymSpell) Lookup(
 	}
 
 	var suggestions []SuggestItem
-	phraseLen := len(phrase)
+	phraseRunes := []rune(phrase)
+	phraseLen := len(phraseRunes)
 
 	// Early exit function
 	earlyExit := func(sug []SuggestItem) []SuggestItem {
@@ -52,20 +53,20 @@ func (s *SymSpell) Lookup(
 	var candidates []string
 
 	// Add original prefix
-	phrasePrefixLen := phraseLen
-	if phrasePrefixLen > s.PrefixLength {
-		phrasePrefixLen = s.PrefixLength
-		candidates = append(candidates, phrase[:phrasePrefixLen])
-	} else {
-		candidates = append(candidates, phrase)
+	phrasePrefixRunes := phraseRunes
+	if phraseLen > s.PrefixLength {
+		phrasePrefixRunes = phraseRunes[:s.PrefixLength]
 	}
+	phrasePrefix := string(phrasePrefixRunes)
+	candidates = append(candidates, phrasePrefix)
 
 	// Process candidates
 	for candidatePointer < len(candidates) {
 		candidate := candidates[candidatePointer]
 		candidatePointer++
-		candidateLen := len(candidate)
-		lenDiff := phrasePrefixLen - candidateLen
+		candidateRunes := []rune(candidate)
+		candidateLen := len(candidateRunes)
+		lenDiff := phraseLen - candidateLen
 
 		// Early termination: if candidate distance is already higher than
 		// suggestion distance, then there are no better suggestions to be
@@ -87,15 +88,13 @@ func (s *SymSpell) Lookup(
 				if suggestion == phrase {
 					continue
 				}
-				suggestionLen := len(suggestion)
+				suggestionRunes := []rune(suggestion)
+				suggestionLen := len(suggestionRunes)
 				if abs(suggestionLen-phraseLen) > maxEditDistance2 || suggestionLen < candidateLen ||
 					(suggestionLen == candidateLen && suggestion != candidate) {
 					continue
 				}
-				suggestionPrefixLen := min(suggestionLen, s.PrefixLength)
-				if suggestionPrefixLen > phrasePrefixLen && suggestionPrefixLen-candidateLen > maxEditDistance2 {
-					continue
-				}
+
 				// True Damerau-Levenshtein Edit Distance: adjust distance,
 				// if both distances>0. We allow simultaneous edits (deletes)
 				// of max_edit_distance on on both the dictionary and the
@@ -119,12 +118,12 @@ func (s *SymSpell) Lookup(
 					}
 				} else if suggestionLen == 1 {
 					var distanceCalc = func() int {
-						phraseLength := len(phrase)
-						// Check if the first character of suggestion exists in phrase
-						if strings.Index(phrase, string(suggestion[0])) < 0 {
-							return phraseLength
+						phraseRunesList := []rune(phrase)
+						// Check if the first rune of suggestion exists in phrase
+						if slices.Contains(phraseRunesList, suggestionRunes[0]) {
+							return phraseLen - 1
 						} else {
-							return phraseLength - 1
+							return phraseLen
 						}
 					}
 					distance = distanceCalc()
@@ -146,13 +145,13 @@ func (s *SymSpell) Lookup(
 					}
 					if s.PrefixLength-maxEditDistance == candidateLen {
 						if minDistance > 1 &&
-							phrase[phraseLen+1-minDistance:] != suggestion[suggestionLen+1-minDistance:] {
+							string(phraseRunes[phraseLen+1-minDistance:]) != string(suggestionRunes[suggestionLen+1-minDistance:]) {
 							continue
 						}
 						if minDistance > 0 &&
-							phrase[phraseLen-minDistance] != suggestion[suggestionLen-minDistance] {
-							if phrase[phraseLen-minDistance-1] != suggestion[suggestionLen-minDistance] ||
-								phrase[phraseLen-minDistance] != suggestion[suggestionLen-minDistance-1] {
+							phraseRunes[phraseLen-minDistance] != suggestionRunes[suggestionLen-minDistance] {
+							if phraseRunes[phraseLen-minDistance-1] != suggestionRunes[suggestionLen-minDistance] ||
+								phraseRunes[phraseLen-minDistance] != suggestionRunes[suggestionLen-minDistance-1] {
 								continue
 							}
 						}
@@ -205,8 +204,9 @@ func (s *SymSpell) Lookup(
 			if verbosity != verbositypkg.All && lenDiff >= maxEditDistance2 {
 				continue
 			}
-			for i := 0; i < candidateLen; i++ {
-				deleteItem := candidate[:i] + candidate[i+1:]
+			for i := 0; i < len(candidateRunes); i++ {
+				deleteRunes := append(candidateRunes[:i], candidateRunes[i+1:]...)
+				deleteItem := string(deleteRunes)
 				if !consideredDeletes[deleteItem] {
 					consideredDeletes[deleteItem] = true
 					candidates = append(candidates, deleteItem)

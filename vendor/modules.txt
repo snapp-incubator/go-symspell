@@ -1,4 +1,0 @@
-# github.com/snapp-incubator/seperno v1.0.0
-## explicit; go 1.22.0
-github.com/snapp-incubator/seperno
-github.com/snapp-incubator/seperno/internal

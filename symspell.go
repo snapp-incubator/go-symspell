@@ -34,9 +34,11 @@ func NewSymSpellWithLoadBigramDictionary(vocabDirPath, bigramDirPath string, ter
 	if err != nil || !ok {
 		log.Fatal("[Error] ", err)
 	}
-	ok, err = symspell.LoadBigramDictionary(bigramDirPath, termIndex, countIndex, " ")
+	ok, err = symspell.LoadBigramDictionary(bigramDirPath, termIndex, countIndex+1, "")
 	if err != nil || !ok {
-		log.Fatal("[Error] ", err)
+		if bigramDirPath != "" {
+			log.Println("[Error] ", err)
+		}
 	}
 	return symspell
 }

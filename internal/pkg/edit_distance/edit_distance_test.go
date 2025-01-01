@@ -46,6 +46,22 @@ func TestDamerauLevenshteinDistance(t *testing.T) {
 			},
 			want: 3,
 		},
+		{
+			name: "Test DamerauLevenshteinDistance",
+			args: args{
+				a: "کناب",
+				b: "کتاب",
+			},
+			want: 2,
+		},
+		{
+			name: "Test DamerauLevenshteinDistance",
+			args: args{
+				a: "pipe",
+				b: "pips",
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

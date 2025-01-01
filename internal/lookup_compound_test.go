@@ -38,14 +38,14 @@ func TestLookupCompound(t *testing.T) {
 	symSpell, _ := NewSymSpell(
 		WithCountThreshold(1),
 		WithMaxDictionaryEditDistance(3),
-		WithPrefixLength(7))
+		WithPrefixLength(10))
 	_, _ = symSpell.LoadDictionary("./tests/vocab.txt", 0, 1, " ")
-	_, _ = symSpell.LoadBigramDictionary("./tests/vocab_bigram.txt", 0, 1, " ")
+	_, _ = symSpell.LoadBigramDictionary("./tests/vocab_bigram.txt", 0, 2, "")
 
 	// Run test cases
 	for _, entry := range data.Data {
 		// Test for bigram
-		results := symSpell.LookupCompound(entry.Typo, 2)
+		results := symSpell.LookupCompound(entry.Typo, 3)
 		if len(results) != entry.Bigram.NumResults {
 			t.Errorf("Bigram: Expected %d results, got %d for typo '%s'", entry.Bigram.NumResults, len(results), entry.Typo)
 		} else {

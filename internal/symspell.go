@@ -4,12 +4,11 @@ import (
 	"bufio"
 	"errors"
 	"log"
-	"math"
 	"os"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
-	seperno "github.com/snapp-incubator/seperno"
 	"github.com/snapp-incubator/symspell/internal/pkg/edit_distance"
 )
 
@@ -23,7 +22,6 @@ type SymSpell struct {
 	Deletes                   map[string][]string
 	maxLength                 int
 	distanceComparer          edit_distance.IEditDistance
-	normalizer                func(string) string
 	// lookup compound
 	ReplacedWords  map[string]SuggestItem
 	N              float64
@@ -56,14 +54,6 @@ func NewSymSpell(opt ...Options) (*SymSpell, error) {
 	if opts.CountThreshold < 0 {
 		return nil, errors.New("countThreshold cannot be negative")
 	}
-	normalizer := seperno.NewNormalize(
-		seperno.WithOuterSpaceRemover(),
-		seperno.WithOuterSpaceRemover(),
-		seperno.WithURLRemover(),
-		seperno.WithNormalizePunctuations(),
-		seperno.WithEndsWithEndOfLineChar(),
-		seperno.WithConvertHalfSpaceToSpace(),
-	)
 
 	return &SymSpell{
 		MaxDictionaryEditDistance: opts.MaxDictionaryEditDistance,
@@ -76,9 +66,8 @@ func NewSymSpell(opt ...Options) (*SymSpell, error) {
 		maxLength:                 0,
 		Bigrams:                   make(map[string]int),
 		ReplacedWords:             make(map[string]SuggestItem),
-		N:                         math.MaxInt,
+		N:                         1024908267229,
 		BigramCountMin:            0,
-		normalizer:                normalizer.BasicNormalizer,
 	}, nil
 }
 
@@ -128,21 +117,47 @@ func (s *SymSpell) createDictionaryEntry(key string, count int) bool {
 
 	// Create deletes
 	edits := s.editsPrefix(key)
-	for _, deleteWord := range edits {
+	for deleteWord := range edits {
 		s.Deletes[deleteWord] = append(s.Deletes[deleteWord], key)
 	}
 
 	return true
 }
 
-// editsPrefix generates edits for a given word (placeholder implementation).
-func (s *SymSpell) editsPrefix(word string) []string {
-	// Placeholder logic for generating edits (deletes)
-	var edits []string
-	for i := 0; i < len(word); i++ {
-		edits = append(edits, word[:i]+word[i+1:])
+func (s *SymSpell) edits(word string, editDistance int, deleteWords map[string]bool, currentDistance int) {
+	editDistance++
+	runes := []rune(word)
+	if len(runes) == 0 {
+		if utf8.RuneCountInString(word) <= s.MaxDictionaryEditDistance {
+			deleteWords[""] = true
+		}
+		return
 	}
-	return edits
+	for i := currentDistance; i < len(runes); i++ {
+		deleteRunes := append(runes[:i], runes[i+1:]...)
+		deleteWord := string(deleteRunes)
+		if !deleteWords[deleteWord] {
+			deleteWords[deleteWord] = true
+		}
+		if editDistance < s.MaxDictionaryEditDistance {
+			s.edits(deleteWord, editDistance, deleteWords, i)
+		}
+	}
+}
+
+// editsPrefix function corresponds to _edits_prefix in Python, handling Unicode characters correctly
+func (s *SymSpell) editsPrefix(key string) map[string]bool {
+	hashSet := make(map[string]bool)
+	if utf8.RuneCountInString(key) <= s.MaxDictionaryEditDistance {
+		hashSet[""] = true
+	}
+	runes := []rune(key)
+	if len(runes) > s.PrefixLength {
+		key = string(runes[0:s.PrefixLength])
+	}
+	hashSet[key] = true
+	s.edits(key, 0, hashSet, 0)
+	return hashSet
 }
 
 // LoadDictionary loads dictionary entries from a file.
@@ -178,7 +193,7 @@ func (s *SymSpell) LoadDictionary(corpusPath string, termIndex int, countIndex i
 		if err != nil {
 			continue // Skip invalid counts
 		}
-		s.createDictionaryEntry(s.normalizer(term), count)
+		s.createDictionaryEntry(term, count)
 	}
 
 	if err = scanner.Err(); err != nil {

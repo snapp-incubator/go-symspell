@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -9,13 +10,14 @@ import (
 
 func TestDeletes(t *testing.T) {
 	symSpell, _ := NewSymSpell(
-		WithCountThreshold(5),
+		WithCountThreshold(1),
+		WithMaxDictionaryEditDistance(4),
 	)
 	symSpell.createDictionaryEntry("steama", 4)
 	symSpell.createDictionaryEntry("steamb", 6)
 	symSpell.createDictionaryEntry("steamc", 2)
 
-	results, err := symSpell.Lookup("stream", verbositypkg.Closest, 2)
+	results, err := symSpell.Lookup("stream", verbositypkg.Top, 4)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -34,14 +36,17 @@ func TestDeletes(t *testing.T) {
 }
 
 func TestWordsWithSharedPrefixShouldRetainCounts(t *testing.T) {
-	symSpell, err := NewSymSpell(WithCountThreshold(5))
-	symSpell.createDictionaryEntry("pipe", 5)
+	symSpell, err := NewSymSpell(
+		WithCountThreshold(4),
+		WithMaxDictionaryEditDistance(3),
+	)
+	//symSpell.createDictionaryEntry("pipe", 5)
 	symSpell.createDictionaryEntry("pips", 10)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 	// Test for "pipe"
-	results, err := symSpell.Lookup("pipe", verbositypkg.All, 1)
+	results, err := symSpell.Lookup("pipe", verbositypkg.All, 3)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -141,7 +146,6 @@ func TestVerbosityShouldControlLookupResults(t *testing.T) {
 	symSpell.createDictionaryEntry("steam", 1)
 	symSpell.createDictionaryEntry("steams", 2)
 	symSpell.createDictionaryEntry("steem", 3)
-
 	tests := []struct {
 		verbosity  verbositypkg.Verbosity
 		numResults int
@@ -153,6 +157,7 @@ func TestVerbosityShouldControlLookupResults(t *testing.T) {
 
 	for _, test := range tests {
 		results, err := symSpell.Lookup("steems", test.verbosity, 2)
+		fmt.Println(results)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}

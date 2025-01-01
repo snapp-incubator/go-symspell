@@ -22,10 +22,10 @@ func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
 	// Regex pattern to match words, including handling apostrophes
 	var pattern string
 	if preserveCase {
-		pattern = `([^\W_]+['’]*[^\W_]*)`
+		pattern = `(\p{L}+['’]*\p{L}*)`
 	} else {
 		phrase = strings.ToLower(phrase)
-		pattern = `([^\W_]+['’]*[^\W_]*)`
+		pattern = `(\p{L}+['’]*\p{L}*)`
 	}
 
 	re := regexp.MustCompile(pattern)
@@ -33,7 +33,7 @@ func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
 }
 
 func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) []SuggestItem {
-	terms1 := parseWords(phrase, false, false)
+	terms1 := parseWords(phrase, true, true)
 	var suggestions []SuggestItem
 	var suggestionParts []SuggestItem
 	isLastCombi := false
@@ -74,9 +74,10 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) []SuggestI
 				suggestionSplitBest = &suggestions[0]
 			}
 			if len(terms1[i]) > 1 {
-				for j := 1; j < len(term); j++ {
-					part1 := term[:j]
-					part2 := term[j:]
+				runes := []rune(term)
+				for j := 1; j < len(runes); j++ {
+					part1 := string(runes[:j])
+					part2 := string(runes[j:])
 					suggestions1, _ := s.Lookup(part1, verbositypkg.Top, maxEditDistance)
 					suggestions2, _ := s.Lookup(part2, verbositypkg.Top, maxEditDistance)
 					if len(suggestions1) == 0 || len(suggestions2) == 0 {
@@ -164,7 +165,6 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) []SuggestI
 func createWithProbability(term string, distance int) SuggestItem {
 	// Calculate Naive Bayes probability as the count
 	probabilityCount := int(10 / math.Pow(10, float64(len(term))))
-	fmt.Println("probabilityCount: ", probabilityCount)
 
 	return SuggestItem{
 		Term:     term,
@@ -177,18 +177,19 @@ func createWithProbability(term string, distance int) SuggestItem {
 func tryParseInt64(value string) (int, bool) {
 	parsed, err := strconv.Atoi(value)
 	if err != nil {
+		fmt.Println("Error parsing integer: ", err)
 		return 0, false
 	}
 	return parsed, true
 }
 
 // Load bigram dictionary from a stream
-func (s *SymSpell) LoadBigramDictionaryStream(corpusStream *os.File, termIndex, countIndex int, separator *string) bool {
+func (s *SymSpell) LoadBigramDictionaryStream(corpusStream *os.File, termIndex, countIndex int, separator string) bool {
 	scanner := bufio.NewScanner(corpusStream)
 
 	// Define minimum parts depending on the separator
 	minParts := 3
-	if separator != nil {
+	if separator != "" {
 		minParts = 2
 	}
 
@@ -200,10 +201,10 @@ func (s *SymSpell) LoadBigramDictionaryStream(corpusStream *os.File, termIndex, 
 
 		// Split line by the separator
 		var parts []string
-		if separator == nil {
+		if separator == "" {
 			parts = strings.Fields(line)
 		} else {
-			parts = strings.Split(line, *separator)
+			parts = strings.Split(line, separator)
 		}
 
 		if len(parts) < minParts {
@@ -218,12 +219,11 @@ func (s *SymSpell) LoadBigramDictionaryStream(corpusStream *os.File, termIndex, 
 
 		// Create the key
 		var key string
-		if separator == nil {
+		if separator == "" {
 			key = parts[termIndex] + " " + parts[termIndex+1]
 		} else {
 			key = parts[termIndex]
 		}
-
 		// Add to bigram dictionary
 		s.Bigrams[key] = count
 
@@ -241,6 +241,9 @@ func (s *SymSpell) LoadBigramDictionary(
 	termIndex, countIndex int,
 	separator string,
 ) (bool, error) {
+	if corpusPath == "" {
+		return false, fmt.Errorf("corpus path cannot be empty")
+	}
 	// Check if the file exists
 	file, err := os.Open(corpusPath)
 	if err != nil {
@@ -249,5 +252,5 @@ func (s *SymSpell) LoadBigramDictionary(
 	defer file.Close()
 
 	// Use the stream-based loading function
-	return s.LoadBigramDictionaryStream(file, termIndex, countIndex, &separator), nil
+	return s.LoadBigramDictionaryStream(file, termIndex, countIndex, separator), nil
 }
