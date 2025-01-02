@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/snapp-incubator/symspell/internal"
+	"github.com/snapp-incubator/symspell/internal/verbosity"
 )
 
 func NewSymSpell(opt ...internal.Options) *internal.SymSpell {
@@ -54,3 +55,9 @@ func WithPrefixLength(prefixLength int) internal.Options {
 func WithCountThreshold(countThreshold int) internal.Options {
 	return internal.WithCountThreshold(countThreshold)
 }
+
+const (
+	Top     = verbosity.Top
+	Closest = verbosity.Closest
+	All     = verbosity.All
+)

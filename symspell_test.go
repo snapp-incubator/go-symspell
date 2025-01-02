@@ -3,7 +3,6 @@ package symspell
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/snapp-incubator/symspell/internal/verbosity"
 )
@@ -93,6 +92,22 @@ func TestSymspellLookupCompound(t *testing.T) {
 			},
 			want: "where is the love he had dated for much of the past who",
 		},
+		{
+			name: "Test 2",
+			args: args{
+				a:               "Can yu readthis",
+				maxEditDistance: 2,
+			},
+			want: "can you read this",
+		},
+		{
+			name: "Test 3",
+			args: args{
+				a:               "sekretplan",
+				maxEditDistance: 1,
+			},
+			want: "secret plan",
+		},
 	}
 	symSpell := NewSymSpellWithLoadBigramDictionary("internal/tests/vocab.txt", "internal/tests/vocab_bigram.txt",
 		0, 1,
@@ -104,9 +119,9 @@ func TestSymspellLookupCompound(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			suggests :=
 				symSpell.LookupCompound(tt.args.a, tt.args.maxEditDistance)
-			if suggests[0].Term != tt.want {
-				fmt.Println(suggests[0].Term)
-				t.Errorf("want = %v, got %v", tt.want, suggests[0].Term)
+			if suggests.Term != tt.want {
+				fmt.Println(suggests.Term)
+				t.Errorf("want = %v, got %v", tt.want, suggests.Term)
 			}
 		})
 	}
@@ -163,11 +178,9 @@ func TestSymspellLookupCompoundUnigram(t *testing.T) {
 	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			now := time.Now()
-			suggests := symSpell.LookupCompound(tt.args.a, tt.args.maxEditDistance)
-			fmt.Println(time.Since(now))
-			if suggests[0].Term != tt.want {
-				t.Errorf("got = %v, want %v", suggests[0].Term, tt.want)
+			suggest := symSpell.LookupCompound(tt.args.a, tt.args.maxEditDistance)
+			if suggest.Term != tt.want {
+				t.Errorf("got = %v, want %v", suggest.Term, tt.want)
 			}
 		})
 	}

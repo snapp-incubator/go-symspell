@@ -2,10 +2,11 @@ package internal
 
 import (
 	"errors"
-	verbositypkg "github.com/snapp-incubator/symspell/internal/verbosity"
 	"math"
 	"slices"
 	"sort"
+
+	verbositypkg "github.com/snapp-incubator/symspell/internal/verbosity"
 )
 
 func (s *SymSpell) Lookup(
@@ -39,7 +40,7 @@ func (s *SymSpell) Lookup(
 		}
 	}
 
-	// Early termination for max edit distance == 0
+	// Early termination for maxEditDistance == 0
 	if maxEditDistance == 0 {
 		return earlyExit(suggestions), nil
 	}
@@ -73,7 +74,7 @@ func (s *SymSpell) Lookup(
 		// expected
 		if lenDiff > maxEditDistance2 {
 			if verbosity == verbositypkg.All {
-				// `max_edit_distance_2`` only updated when
+				// `maxEditDistance2` only updated when
 				// verbosity != ALL. New candidates are generated from
 				// deletes so it keeps getting shorter. This should never
 				// be reached.
@@ -94,14 +95,17 @@ func (s *SymSpell) Lookup(
 					(suggestionLen == candidateLen && suggestion != candidate) {
 					continue
 				}
-
+				suggestionPrefixLen := min(suggestionLen, s.PrefixLength)
+				if suggestionPrefixLen > phraseLen && suggestionPrefixLen-candidateLen > maxEditDistance2 {
+					continue
+				}
 				// True Damerau-Levenshtein Edit Distance: adjust distance,
 				// if both distances>0. We allow simultaneous edits (deletes)
-				// of max_edit_distance on on both the dictionary and the
+				// of maxEditDistance on both the dictionary and the
 				// phrase term. For replaces and adjacent transposes the
-				// resulting edit distance stays <= max_edit_distance. For
+				// resulting edit distance stays <= maxEditDistance. For
 				// inserts and deletes the resulting edit distance might
-				// exceed max_edit_distance. To prevent suggestions of a
+				// exceed maxEditDistance. To prevent suggestions of a
 				// higher edit distance, we need to calculate the resulting
 				// edit distance, if there are simultaneous edits on both
 				// sides. Example: (bank==bnak and bank==bink, but bank!=kanb
@@ -130,13 +134,13 @@ func (s *SymSpell) Lookup(
 					if distance > maxEditDistance2 || consideredSuggestions[suggestion] {
 						continue
 					}
-					//number of edits in prefix ==maxeditdistance AND no
-					//identical suffix, then editdistance>max_edit_distance and
+					//number of edits in prefix ==maxEditDistance AND no
+					//identical suffix, then distance>maxEditDistance and
 					//no need for Levenshtein calculation
 					//(phraseLen >= prefixLength) &&
 					//(suggestionLen >= prefixLength)
 				} else {
-					// handles the shortcircuit of min_distance assignment
+					// handles the shortcircuit of minDistance assignment
 					// when first boolean expression evaluates to False
 					if s.PrefixLength-maxEditDistance == candidateLen {
 						minDistance = min(phraseLen, suggestionLen) - s.PrefixLength
@@ -156,7 +160,7 @@ func (s *SymSpell) Lookup(
 							}
 						}
 					}
-					// delete_in_suggestion_prefix is somewhat expensive, and
+					// delete in suggestion prefix is somewhat expensive, and
 					// only pays off when verbosity is TOP or CLOSEST
 					if consideredSuggestions[suggestion] {
 						continue
@@ -168,8 +172,8 @@ func (s *SymSpell) Lookup(
 					}
 				}
 				// do not process higher distances than those already found,
-				// if verbosity<ALL (note: max_edit_distance_2 will always
-				// equal max_edit_distance when Verbosity.ALL)
+				// if verbosity<ALL (note: maxEditDistance2 will always
+				// equal maxEditDistance when Verbosity.ALL)
 				if distance <= maxEditDistance2 {
 					suggestionCount := s.Words[suggestion]
 					item := SuggestItem{Term: suggestion, Distance: distance, Count: suggestionCount}
@@ -225,7 +229,6 @@ func (s *SymSpell) Lookup(
 		})
 	}
 
-	earlyExit(suggestions)
 	return suggestions, nil
 }
 

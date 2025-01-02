@@ -40,39 +40,41 @@ func TestLookupCompound(t *testing.T) {
 		WithMaxDictionaryEditDistance(3),
 		WithPrefixLength(10))
 	_, _ = symSpell.LoadDictionary("./tests/vocab.txt", 0, 1, " ")
-	_, _ = symSpell.LoadBigramDictionary("./tests/vocab_bigram.txt", 0, 2, "")
 
 	// Run test cases
 	for _, entry := range data.Data {
-		// Test for bigram
-		results := symSpell.LookupCompound(entry.Typo, 3)
-		if len(results) != entry.Bigram.NumResults {
-			t.Errorf("Bigram: Expected %d results, got %d for typo '%s'", entry.Bigram.NumResults, len(results), entry.Typo)
+		// Test for unigram
+		results := symSpell.LookupCompound(entry.Typo, 2)
+		if results == nil {
+			t.Errorf("Unigram: Expected %d results, got %v for typo '%s'", entry.Unigram.NumResults, results, entry.Typo)
 		} else {
-			if results[0].Term != entry.Bigram.Term {
-				t.Errorf("Bigram: Expected term '%s', got '%s' for typo '%s'", entry.Bigram.Term, results[0].Term, entry.Typo)
+			if results.Term != entry.Unigram.Term {
+				t.Errorf("Unigram: Expected term '%s', got '%s' for typo '%s'", entry.Unigram.Term, results.Term, entry.Typo)
 			}
-			if results[0].Distance != entry.Bigram.Distance {
-				t.Errorf("Bigram: Expected distance %d, got %d for typo '%s'", entry.Bigram.Distance, results[0].Distance, entry.Typo)
+			if results.Distance != entry.Unigram.Distance {
+				t.Errorf("Unigram: Expected distance %d, got %d for typo '%s'", entry.Unigram.Distance, results.Distance, entry.Typo)
 			}
-			if results[0].Count != entry.Bigram.Count {
-				t.Errorf("Bigram: Expected count %d, got %d for typo '%s'", entry.Bigram.Count, results[0].Count, entry.Typo)
+			if results.Count != entry.Unigram.Count {
+				t.Errorf("Unigram: Expected count %d, got %d for typo '%s'", entry.Unigram.Count, results.Count, entry.Typo)
 			}
 		}
+	} // Run test cases
 
-		// Test for unigram
-		results = symSpell.LookupCompound(entry.Typo, 2)
-		if len(results) != entry.Unigram.NumResults {
-			t.Errorf("Unigram: Expected %d results, got %d for typo '%s'", entry.Unigram.NumResults, len(results), entry.Typo)
+	_, _ = symSpell.LoadBigramDictionary("./tests/vocab_bigram.txt", 0, 2, "")
+	for _, entry := range data.Data {
+		// Test for bigram
+		results := symSpell.LookupCompound(entry.Typo, 3)
+		if results == nil {
+			t.Errorf("Bigram: Expected %d results, got %v for typo '%s'", entry.Bigram.NumResults, results, entry.Typo)
 		} else {
-			if results[0].Term != entry.Unigram.Term {
-				t.Errorf("Unigram: Expected term '%s', got '%s' for typo '%s'", entry.Unigram.Term, results[0].Term, entry.Typo)
+			if results.Term != entry.Bigram.Term {
+				t.Errorf("Bigram: Expected term '%s', got '%s' for typo '%s'", entry.Bigram.Term, results.Term, entry.Typo)
 			}
-			if results[0].Distance != entry.Unigram.Distance {
-				t.Errorf("Unigram: Expected distance %d, got %d for typo '%s'", entry.Unigram.Distance, results[0].Distance, entry.Typo)
+			if results.Distance != entry.Bigram.Distance {
+				t.Errorf("Bigram: Expected distance %d, got %d for typo '%s'", entry.Bigram.Distance, results.Distance, entry.Typo)
 			}
-			if results[0].Count != entry.Unigram.Count {
-				t.Errorf("Unigram: Expected count %d, got %d for typo '%s'", entry.Unigram.Count, results[0].Count, entry.Typo)
+			if results.Count != entry.Bigram.Count {
+				t.Errorf("Bigram: Expected count %d, got %d for typo '%s'", entry.Bigram.Count, results.Count, entry.Typo)
 			}
 		}
 	}

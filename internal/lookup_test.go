@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"testing"
 
 	verbositypkg "github.com/snapp-incubator/symspell/internal/verbosity"
@@ -114,7 +113,6 @@ func TestVerbosityShouldControlLookupResults(t *testing.T) {
 
 	for _, test := range tests {
 		results, err := symSpell.Lookup("steems", test.verbosity, 2)
-		fmt.Println(results)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}

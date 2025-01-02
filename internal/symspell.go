@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"log"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -67,7 +68,7 @@ func NewSymSpell(opt ...Options) (*SymSpell, error) {
 		Bigrams:                   make(map[string]int),
 		ReplacedWords:             make(map[string]SuggestItem),
 		N:                         1024908267229,
-		BigramCountMin:            0,
+		BigramCountMin:            math.MaxInt,
 	}, nil
 }
 
@@ -98,7 +99,8 @@ func (s *SymSpell) createDictionaryEntry(key string, count int) bool {
 		// Increment the count
 		s.Words[key] = incrementCount(count, countPrev)
 		return false
-	} else if count < s.CountThreshold {
+	}
+	if count < s.CountThreshold {
 		// Add to below-threshold words
 		s.BelowThresholdWords[key] = count
 		return false

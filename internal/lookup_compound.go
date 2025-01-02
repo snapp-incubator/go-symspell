@@ -3,12 +3,13 @@ package internal
 import (
 	"bufio"
 	"fmt"
-	verbositypkg "github.com/snapp-incubator/symspell/internal/verbosity"
 	"math"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	verbositypkg "github.com/snapp-incubator/symspell/internal/verbosity"
 )
 
 func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
@@ -32,12 +33,12 @@ func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
 	return re.FindAllString(phrase, -1)
 }
 
-func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) []SuggestItem {
-	terms1 := parseWords(phrase, true, true)
+func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *SuggestItem {
+	terms1 := parseWords(phrase, false, false)
 	var suggestions []SuggestItem
 	var suggestionParts []SuggestItem
 	isLastCombi := false
-	for i, term := range terms1 {
+	for i, _ := range terms1 {
 		suggestions, _ = s.Lookup(terms1[i], verbositypkg.Top, maxEditDistance)
 		// Combine adjacent terms
 		if i > 0 && !isLastCombi {
@@ -74,7 +75,7 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) []SuggestI
 				suggestionSplitBest = &suggestions[0]
 			}
 			if len(terms1[i]) > 1 {
-				runes := []rune(term)
+				runes := []rune(terms1[i])
 				for j := 1; j < len(runes); j++ {
 					part1 := string(runes[:j])
 					part2 := string(runes[j:])
@@ -84,7 +85,7 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) []SuggestI
 						continue
 					}
 					tmpTerm := suggestions1[0].Term + " " + suggestions2[0].Term
-					tmpDistance := s.distanceCompare(term, tmpTerm, maxEditDistance)
+					tmpDistance := s.distanceCompare(terms1[i], tmpTerm, maxEditDistance)
 					if tmpDistance < 0 {
 						tmpDistance = maxEditDistance + 1
 					}
@@ -106,12 +107,12 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) []SuggestI
 						// Update count if split corrections match
 						if len(suggestions) > 0 {
 							bestSI := suggestions[0]
-							if suggestions1[0].Term+suggestions2[0].Term == term {
+							if suggestions1[0].Term+suggestions2[0].Term == terms1[i] {
 								tmpCount = int(math.Max(float64(tmpCount), float64(bestSI.Count+2)))
 							} else if bestSI.Term == suggestions1[0].Term || bestSI.Term == suggestions2[0].Term {
 								tmpCount = int(math.Max(float64(tmpCount), float64(bestSI.Count+1)))
 							}
-						} else if suggestions1[0].Term+suggestions2[0].Term == term {
+						} else if suggestions1[0].Term+suggestions2[0].Term == terms1[i] {
 							tmpCount = int(math.Max(
 								float64(tmpCount),
 								math.Max(
@@ -159,7 +160,7 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) []SuggestI
 		Count:    int(joinedCount),
 	}
 
-	return []SuggestItem{finalSuggestion}
+	return &finalSuggestion
 }
 
 func createWithProbability(term string, distance int) SuggestItem {
@@ -177,7 +178,7 @@ func createWithProbability(term string, distance int) SuggestItem {
 func tryParseInt64(value string) (int, bool) {
 	parsed, err := strconv.Atoi(value)
 	if err != nil {
-		fmt.Println("Error parsing integer: ", err)
+		fmt.Println("[ERROR] parsing integer: ", err)
 		return 0, false
 	}
 	return parsed, true
