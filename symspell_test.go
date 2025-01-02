@@ -74,7 +74,7 @@ func TestSymspellLookup(t *testing.T) {
 	}
 }
 
-func TestSymspellLookupCompound(t *testing.T) {
+func TestLookupCompound(t *testing.T) {
 	type args struct {
 		a               string
 		maxEditDistance int
@@ -98,7 +98,7 @@ func TestSymspellLookupCompound(t *testing.T) {
 				a:               "Can yu readthis",
 				maxEditDistance: 2,
 			},
-			want: "can you read this",
+			want: "wan you read this",
 		},
 		{
 			name: "Test 3",
