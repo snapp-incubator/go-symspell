@@ -94,10 +94,7 @@ func (s *SymSpell) createDictionaryEntry(key string, count int) bool {
 				return false
 			}
 		}
-	}
-
-	// Check existing words
-	if countPrev, found := s.Words[key]; found {
+	} else if countPrev, found := s.Words[key]; found {
 		// Increment the count
 		s.Words[key] = incrementCount(count, countPrev)
 		return false
@@ -134,8 +131,7 @@ func (s *SymSpell) edits(word string, editDistance int, deleteWords map[string]b
 		return
 	}
 	for i := currentDistance; i < len(runes); i++ {
-		deleteRunes := append(runes[:i], runes[i+1:]...)
-		deleteWord := string(deleteRunes)
+		deleteWord := string(runes[:i]) + string(runes[i+1:])
 		if !deleteWords[deleteWord] {
 			deleteWords[deleteWord] = true
 		}
@@ -153,7 +149,7 @@ func (s *SymSpell) editsPrefix(key string) map[string]bool {
 	}
 	runes := []rune(key)
 	if len(runes) > s.PrefixLength {
-		key = string(runes[0:s.PrefixLength])
+		key = string(runes[:s.PrefixLength])
 	}
 	hashSet[key] = true
 	s.edits(key, 0, hashSet, 0)

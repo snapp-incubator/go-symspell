@@ -200,13 +200,12 @@ func (s *SymSpell) Lookup(
 		// Add Edits: derive edits (deletes) from candidate (phrase) and add
 		// them to candidates list. this is a recursive process until the
 		// maximum edit distance has been reached
-		if lenDiff < maxEditDistance && candidateLen <= s.PrefixLength {
+		if lenDiff <= maxEditDistance && candidateLen <= s.PrefixLength {
 			if verbosity != verbositypkg.All && lenDiff >= maxEditDistance2 {
 				continue
 			}
 			for i := 0; i < len(candidateRunes); i++ {
-				deleteRunes := append(candidateRunes[:i], candidateRunes[i+1:]...)
-				deleteItem := string(deleteRunes)
+				deleteItem := string(candidateRunes[:i]) + string(candidateRunes[i+1:])
 				if !consideredDeletes[deleteItem] {
 					consideredDeletes[deleteItem] = true
 					candidates = append(candidates, deleteItem)

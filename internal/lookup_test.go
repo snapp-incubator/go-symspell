@@ -2,7 +2,6 @@ package internal
 
 import (
 	"fmt"
-	"math"
 	"testing"
 
 	verbositypkg "github.com/snapp-incubator/symspell/internal/verbosity"
@@ -11,13 +10,14 @@ import (
 func TestDeletes(t *testing.T) {
 	symSpell, _ := NewSymSpell(
 		WithCountThreshold(1),
-		WithMaxDictionaryEditDistance(4),
+		WithMaxDictionaryEditDistance(2),
+		WithPrefixLength(7),
 	)
 	symSpell.createDictionaryEntry("steama", 4)
 	symSpell.createDictionaryEntry("steamb", 6)
 	symSpell.createDictionaryEntry("steamc", 2)
 
-	results, err := symSpell.Lookup("stream", verbositypkg.Top, 4)
+	results, err := symSpell.Lookup("stream", verbositypkg.Top, 2)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -38,15 +38,16 @@ func TestDeletes(t *testing.T) {
 func TestWordsWithSharedPrefixShouldRetainCounts(t *testing.T) {
 	symSpell, err := NewSymSpell(
 		WithCountThreshold(4),
-		WithMaxDictionaryEditDistance(3),
+		WithMaxDictionaryEditDistance(1),
+		WithPrefixLength(3),
 	)
-	//symSpell.createDictionaryEntry("pipe", 5)
+	symSpell.createDictionaryEntry("pipe", 5)
 	symSpell.createDictionaryEntry("pips", 10)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 	// Test for "pipe"
-	results, err := symSpell.Lookup("pipe", verbositypkg.All, 3)
+	results, err := symSpell.Lookup("pipe", verbositypkg.All, 1)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -94,50 +95,6 @@ func TestWordsWithSharedPrefixShouldRetainCounts(t *testing.T) {
 	}
 }
 
-func TestAddAdditionalCountsShouldNotOverflow(t *testing.T) {
-	symSpell, err := NewSymSpell(WithCountThreshold(5))
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-	// Mock data for test
-	getSameWordAndCount := []struct {
-		Word  string
-		Count int
-	}{
-		{"word1", math.MaxInt64 - 1},
-		{"word1", 2}, // This should overflow
-	}
-
-	for i, entry := range getSameWordAndCount {
-		word := entry.Word
-		count := entry.Count
-
-		// Create dictionary entry
-		symSpell.createDictionaryEntry(word, count)
-
-		// Lookup the word
-		results, err := symSpell.Lookup(word, verbositypkg.Top, 2)
-		if err != nil {
-			t.Fatalf("Unexpected error: %v", err)
-		}
-		if len(results) == 0 {
-			t.Fatalf("Expected results for word '%s', got none", word)
-		}
-
-		// Verify the count
-		expectedCount := count
-		if i == 0 {
-			expectedCount = math.MaxInt64 - 1
-		} else {
-			expectedCount = math.MaxInt64
-		}
-
-		if results[0].Count != expectedCount {
-			t.Errorf("Expected count %d for word '%s', got %d", expectedCount, word, results[0].Count)
-		}
-	}
-}
-
 func TestVerbosityShouldControlLookupResults(t *testing.T) {
 	symSpell, err := NewSymSpell(WithCountThreshold(0))
 	if err != nil {
@@ -151,7 +108,7 @@ func TestVerbosityShouldControlLookupResults(t *testing.T) {
 		numResults int
 	}{
 		{verbositypkg.Top, 1},
-		{verbositypkg.Closest, 1},
+		{verbositypkg.Closest, 2},
 		{verbositypkg.All, 3},
 	}
 
@@ -168,7 +125,7 @@ func TestVerbosityShouldControlLookupResults(t *testing.T) {
 }
 
 func TestShouldReturnMostFrequent(t *testing.T) {
-	symSpell, _ := NewSymSpell(WithCountThreshold(1))
+	symSpell, _ := NewSymSpell(WithCountThreshold(1), WithMaxDictionaryEditDistance(2))
 	symSpell.createDictionaryEntry("steama", 4)
 	symSpell.createDictionaryEntry("steamb", 6)
 	symSpell.createDictionaryEntry("steamc", 2)

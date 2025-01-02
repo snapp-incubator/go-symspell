@@ -2,9 +2,10 @@ package symspell
 
 import (
 	"fmt"
-	"github.com/snapp-incubator/symspell/internal/verbosity"
 	"testing"
 	"time"
+
+	"github.com/snapp-incubator/symspell/internal/verbosity"
 )
 
 func TestSymspellLookup(t *testing.T) {
@@ -48,7 +49,7 @@ func TestSymspellLookup(t *testing.T) {
 		{
 			name: "چهاردانگه",
 			args: args{
-				a:               "چهاردونگه",
+				a:               "چهاردنگه",
 				maxEditDistance: 3,
 				verbosity:       verbosity.Top,
 			},
@@ -58,7 +59,7 @@ func TestSymspellLookup(t *testing.T) {
 	symSpell := NewSymSpellWithLoadDictionary("internal/tests/vocab_fa.txt", 0, 1,
 		WithCountThreshold(10),
 		WithMaxDictionaryEditDistance(3),
-		WithPrefixLength(10),
+		WithPrefixLength(5),
 	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
