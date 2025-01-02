@@ -1,5 +1,6 @@
 # SymSpell Package
-    
+[![GoDoc](https://godoc.org/github.com/snapp-incubator/symspell?status.svg)](https://pkg.go.dev/github.com/snapp-incubator/symspell)
+[![Go Report Card](https://goreportcard.com/badge/github.com/snapp-incubator/symspell)](https://goreportcard.com/report/github.com/snapp-incubator/symspell)
 
 ## Overview
 
