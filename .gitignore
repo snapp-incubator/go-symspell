@@ -1,3 +1,7 @@
 .idea
 
 *.xml
+
+*.json
+internal/tests/vocab.txt
+internal/tests/vocab_bigram.txt
