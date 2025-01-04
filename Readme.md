@@ -1,6 +1,6 @@
 # SymSpell Package
-[![GoDoc](https://godoc.org/github.com/snapp-incubator/symspell?status.svg)](https://pkg.go.dev/github.com/snapp-incubator/symspell)
-[![Go Report Card](https://goreportcard.com/badge/github.com/snapp-incubator/symspell)](https://goreportcard.com/report/github.com/snapp-incubator/symspell)
+[![GoDoc](https://godoc.org/github.com/snapp-incubator/go-symspell?status.svg)](https://pkg.go.dev/github.com/snapp-incubator/go-symspell)
+[![Go Report Card](https://goreportcard.com/badge/github.com/snapp-incubator/go-symspell)](https://goreportcard.com/report/github.com/snapp-incubator/go-symspell)
 
 ## Overview
 
@@ -21,14 +21,14 @@ advanced contextual correction.
 Install the package using `go get`:
 
 ```sh
-go get github.com/snapp-incubator/symspell
+go get github.com/snapp-incubator/go-symspell
 ```
 
 ## Usage
 
 - Import the Package
 
-- import "github.com/snapp-incubator/symspell"
+- import "github.com/snapp-incubator/go-symspell"
 
 - Initialize SymSpell
 
@@ -41,7 +41,7 @@ go get github.com/snapp-incubator/symspell
 ```go
 package main
 
-import "github.com/snapp-incubator/symspell"
+import "github.com/snapp-incubator/go-symspell"
 
 func main() {
     symSpell := symspell.NewSymSpellWithLoadDictionary("path/to/vocab.txt", 0, 1,
