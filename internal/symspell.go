@@ -24,7 +24,6 @@ type SymSpell struct {
 	maxLength                 int
 	distanceComparer          edit_distance.IEditDistance
 	// lookup compound
-	ReplacedWords  map[string]SuggestItem
 	N              float64
 	Bigrams        map[string]int
 	BigramCountMin int
@@ -66,7 +65,6 @@ func NewSymSpell(opt ...Options) (*SymSpell, error) {
 		distanceComparer:          edit_distance.NewEditDistance(edit_distance.DamerauLevenshtein), // todo add more edit distance algorithms
 		maxLength:                 0,
 		Bigrams:                   make(map[string]int),
-		ReplacedWords:             make(map[string]SuggestItem),
 		N:                         1024908267229,
 		BigramCountMin:            math.MaxInt,
 	}, nil
@@ -199,4 +197,12 @@ func (s *SymSpell) LoadDictionary(corpusPath string, termIndex int, countIndex i
 	}
 
 	return true, nil
+}
+
+func incrementCount(count, countPrevious int) int {
+	// Ensure the count does not exceed the maximum value for int64
+	if math.MaxInt64-countPrevious > count {
+		return countPrevious + count
+	}
+	return math.MaxInt64
 }

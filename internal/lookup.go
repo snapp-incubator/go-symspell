@@ -2,11 +2,9 @@ package internal
 
 import (
 	"errors"
-	"math"
+	verbositypkg "github.com/snapp-incubator/symspell/internal/verbosity"
 	"slices"
 	"sort"
-
-	verbositypkg "github.com/snapp-incubator/symspell/internal/verbosity"
 )
 
 func (s *SymSpell) Lookup(
@@ -17,67 +15,57 @@ func (s *SymSpell) Lookup(
 	if maxEditDistance > s.MaxDictionaryEditDistance {
 		return nil, errors.New("distance too large")
 	}
-
-	var suggestions []SuggestItem
-	phraseRunes := []rune(phrase)
-	phraseLen := len(phraseRunes)
-
-	// Early exit function
-	earlyExit := func(sug []SuggestItem) []SuggestItem {
-		return sug
-	}
-
+	cp := newCandidateProcessor(maxEditDistance, verbosity, phrase)
 	// Early exit - word too big to match any words
-	if phraseLen-maxEditDistance > s.maxLength {
-		return earlyExit(suggestions), nil
+	if cp.phraseLen-maxEditDistance > s.maxLength {
+		return cp.suggestions, nil
 	}
 
 	// Quick look for exact match
+	shouldEnd := s.checkExactMatch(phrase, verbosity, &cp)
+	if shouldEnd {
+		return cp.suggestions, nil
+	}
+
+	if maxEditDistance == 0 {
+		return cp.suggestions, nil
+	}
+	cp.consideredSuggestions[phrase] = true
+	// Add original prefix
+	phrasePrefixRunes := s.getOriginPrefix(&cp)
+	cp.candidates = append(cp.candidates, string(phrasePrefixRunes))
+	// Process candidates
+	s.processCandidate(phrase, maxEditDistance, &cp)
+
+	cp.sortCandidate()
+
+	return cp.suggestions, nil
+}
+
+func (s *SymSpell) getOriginPrefix(cp *candidateProcessor) []rune {
+	phrasePrefixRunes := cp.phraseRunes
+	if cp.phraseLen > s.PrefixLength {
+		phrasePrefixRunes = cp.phraseRunes[:s.PrefixLength]
+	}
+	return phrasePrefixRunes
+}
+
+func (s *SymSpell) checkExactMatch(phrase string, verbosity verbositypkg.Verbosity, cp *candidateProcessor) bool {
 	if count, found := s.Words[phrase]; found {
-		suggestions = append(suggestions, SuggestItem{Term: phrase, Distance: 0, Count: count})
+		cp.suggestions = append(cp.suggestions, SuggestItem{Term: phrase, Distance: 0, Count: count})
 		if verbosity != verbositypkg.All {
-			return earlyExit(suggestions), nil
+			return true
 		}
 	}
+	return false
+}
 
-	// Early termination for maxEditDistance == 0
-	if maxEditDistance == 0 {
-		return earlyExit(suggestions), nil
-	}
+func (s *SymSpell) processCandidate(phrase string, maxEditDistance int, cp *candidateProcessor) {
+	for cp.candidatePointer < len(cp.candidates) {
+		candidate, candidateRunes := s.preProcessCandidate(cp)
 
-	consideredDeletes := map[string]bool{}
-	consideredSuggestions := map[string]bool{}
-	consideredSuggestions[phrase] = true
-
-	maxEditDistance2 := maxEditDistance
-	candidatePointer := 0
-	var candidates []string
-
-	// Add original prefix
-	phrasePrefixRunes := phraseRunes
-	if phraseLen > s.PrefixLength {
-		phrasePrefixRunes = phraseRunes[:s.PrefixLength]
-	}
-	phrasePrefix := string(phrasePrefixRunes)
-	candidates = append(candidates, phrasePrefix)
-
-	// Process candidates
-	for candidatePointer < len(candidates) {
-		candidate := candidates[candidatePointer]
-		candidatePointer++
-		candidateRunes := []rune(candidate)
-		candidateLen := len(candidateRunes)
-		lenDiff := phraseLen - candidateLen
-
-		// Early termination: if candidate distance is already higher than
-		// suggestion distance, then there are no better suggestions to be
-		// expected
-		if lenDiff > maxEditDistance2 {
-			if verbosity == verbositypkg.All {
-				// `maxEditDistance2` only updated when
-				// verbosity != ALL. New candidates are generated from
-				// deletes so it keeps getting shorter. This should never
-				// be reached.
+		if cp.lenDiff > cp.maxEditDistance2 {
+			if cp.verbosity == verbositypkg.All {
 				continue
 			}
 			break
@@ -89,147 +77,166 @@ func (s *SymSpell) Lookup(
 				if suggestion == phrase {
 					continue
 				}
-				suggestionRunes := []rune(suggestion)
-				suggestionLen := len(suggestionRunes)
-				if abs(suggestionLen-phraseLen) > maxEditDistance2 || suggestionLen < candidateLen ||
-					(suggestionLen == candidateLen && suggestion != candidate) {
+				cp.updateSuggestion(suggestion)
+				skip := s.checkSuggestionToSkip(cp, suggestion, candidate)
+				if skip {
 					continue
 				}
-				suggestionPrefixLen := min(suggestionLen, s.PrefixLength)
-				if suggestionPrefixLen > phraseLen && suggestionPrefixLen-candidateLen > maxEditDistance2 {
-					continue
-				}
-				// True Damerau-Levenshtein Edit Distance: adjust distance,
-				// if both distances>0. We allow simultaneous edits (deletes)
-				// of maxEditDistance on both the dictionary and the
-				// phrase term. For replaces and adjacent transposes the
-				// resulting edit distance stays <= maxEditDistance. For
-				// inserts and deletes the resulting edit distance might
-				// exceed maxEditDistance. To prevent suggestions of a
-				// higher edit distance, we need to calculate the resulting
-				// edit distance, if there are simultaneous edits on both
-				// sides. Example: (bank==bnak and bank==bink, but bank!=kanb
-				// and bank!=xban and bank!=baxn for max_edit_distance=1).
-				// Two deletes on each side of a pair makes them all equal,
-				// but the first two pairs have edit distance=1, the others
-				// edit distance=2.
-				distance := 0
-				minDistance := 0
-				if candidateLen == 0 {
-					distance = max(phraseLen, suggestionLen)
-					if distance > maxEditDistance2 || consideredSuggestions[suggestion] {
+				cp.resetDistance()
+				if cp.candidateLen == 0 {
+					cp.distance = max(cp.phraseLen, cp.suggestionLen)
+					if cp.distance > cp.maxEditDistance2 || cp.consideredSuggestions[suggestion] {
 						continue
 					}
-				} else if suggestionLen == 1 {
-					var distanceCalc = func() int {
-						phraseRunesList := []rune(phrase)
-						// Check if the first rune of suggestion exists in phrase
-						if slices.Contains(phraseRunesList, suggestionRunes[0]) {
-							return phraseLen - 1
-						} else {
-							return phraseLen
-						}
-					}
-					distance = distanceCalc()
-					if distance > maxEditDistance2 || consideredSuggestions[suggestion] {
+				} else if cp.suggestionLen == 1 {
+					skip = s.checkFirstRuneDistance(phrase, cp.suggestionRunes, cp, suggestion)
+					if skip {
 						continue
 					}
-					//number of edits in prefix ==maxEditDistance AND no
-					//identical suffix, then distance>maxEditDistance and
-					//no need for Levenshtein calculation
-					//(phraseLen >= prefixLength) &&
-					//(suggestionLen >= prefixLength)
 				} else {
-					// handles the shortcircuit of minDistance assignment
-					// when first boolean expression evaluates to False
-					if s.PrefixLength-maxEditDistance == candidateLen {
-						minDistance = min(phraseLen, suggestionLen) - s.PrefixLength
-					} else {
-						minDistance = 0
-					}
-					if s.PrefixLength-maxEditDistance == candidateLen {
-						if minDistance > 1 &&
-							string(phraseRunes[phraseLen+1-minDistance:]) != string(suggestionRunes[suggestionLen+1-minDistance:]) {
-							continue
-						}
-						if minDistance > 0 &&
-							phraseRunes[phraseLen-minDistance] != suggestionRunes[suggestionLen-minDistance] {
-							if phraseRunes[phraseLen-minDistance-1] != suggestionRunes[suggestionLen-minDistance] ||
-								phraseRunes[phraseLen-minDistance] != suggestionRunes[suggestionLen-minDistance-1] {
-								continue
-							}
-						}
-					}
-					// delete in suggestion prefix is somewhat expensive, and
-					// only pays off when verbosity is TOP or CLOSEST
-					if consideredSuggestions[suggestion] {
-						continue
-					}
-					consideredSuggestions[suggestion] = true
-					distance = s.distanceCompare(phrase, suggestion, maxEditDistance2)
-					if distance < 0 {
+					s.updateMinDistance(maxEditDistance, cp)
+					skip = s.checkDistanceToSkip(phrase, maxEditDistance, cp, suggestion)
+					if skip {
 						continue
 					}
 				}
-				// do not process higher distances than those already found,
-				// if verbosity<ALL (note: maxEditDistance2 will always
-				// equal maxEditDistance when Verbosity.ALL)
-				if distance <= maxEditDistance2 {
-					suggestionCount := s.Words[suggestion]
-					item := SuggestItem{Term: suggestion, Distance: distance, Count: suggestionCount}
-
-					if len(suggestions) > 0 {
-						if verbosity == verbositypkg.Closest {
-							// Keep only the closest suggestions
-							if distance < maxEditDistance2 {
-								suggestions = []SuggestItem{}
-							}
-						} else if verbosity == verbositypkg.Top {
-							// Keep the top suggestion based on count or distance
-							if distance < maxEditDistance2 || suggestionCount > suggestions[0].Count {
-								maxEditDistance2 = distance
-								suggestions[0] = item
-							}
-							continue
-						}
-					}
-					// Update maxEditDistance2 if verbosity is not ALL
-					if verbosity != verbositypkg.All {
-						maxEditDistance2 = distance
-					}
-					suggestions = append(suggestions, SuggestItem{Term: suggestion, Distance: distance, Count: s.Words[suggestion]})
+				if cp.distance <= cp.maxEditDistance2 {
+					s.updateSuggestions(suggestion, cp)
 				}
 			}
 		}
-		// Add Edits: derive edits (deletes) from candidate (phrase) and add
-		// them to candidates list. this is a recursive process until the
-		// maximum edit distance has been reached
-		if lenDiff <= maxEditDistance && candidateLen <= s.PrefixLength {
-			if verbosity != verbositypkg.All && lenDiff >= maxEditDistance2 {
+		if cp.lenDiff <= maxEditDistance && cp.candidateLen <= s.PrefixLength {
+			if cp.verbosity != verbositypkg.All && cp.lenDiff >= cp.maxEditDistance2 {
 				continue
 			}
-			for i := 0; i < len(candidateRunes); i++ {
-				deleteItem := string(candidateRunes[:i]) + string(candidateRunes[i+1:])
-				if !consideredDeletes[deleteItem] {
-					consideredDeletes[deleteItem] = true
-					candidates = append(candidates, deleteItem)
-				}
-			}
+			s.addEditDistance(candidateRunes, cp)
 		}
-
 	}
+}
 
-	// Sort suggestions
-	if len(suggestions) > 1 {
-		sort.Slice(suggestions, func(i, j int) bool {
-			if suggestions[i].Distance == suggestions[j].Distance {
-				return suggestions[i].Count > suggestions[j].Count
-			}
-			return suggestions[i].Distance < suggestions[j].Distance
-		})
+func (s *SymSpell) preProcessCandidate(cp *candidateProcessor) (string, []rune) {
+	candidate := cp.candidates[cp.candidatePointer]
+	cp.candidatePointer++
+	candidateRunes := []rune(candidate)
+	cp.candidateLen = len(candidateRunes)
+	cp.lenDiff = cp.phraseLen - cp.candidateLen
+	return candidate, candidateRunes
+}
+
+func (s *SymSpell) checkSuggestionToSkip(cp *candidateProcessor, suggestion string, candidate string) bool {
+	if abs(cp.suggestionLen-cp.phraseLen) > cp.maxEditDistance2 || cp.suggestionLen < cp.candidateLen ||
+		(cp.suggestionLen == cp.candidateLen && suggestion != candidate) {
+		return true
 	}
+	suggestionPrefixLen := min(cp.suggestionLen, s.PrefixLength)
+	if suggestionPrefixLen > cp.phraseLen && suggestionPrefixLen-cp.candidateLen > cp.maxEditDistance2 {
+		return true
+	}
+	return false
+}
 
-	return suggestions, nil
+func (s *SymSpell) checkDistanceToSkip(phrase string, maxEditDistance int, cp *candidateProcessor, suggestion string) bool {
+	if s.PrefixLength-maxEditDistance == cp.candidateLen {
+		skip := s.checkProcessShouldSkip(cp)
+		if skip {
+			return true
+		}
+	}
+	// delete in suggestion prefix is somewhat expensive, and
+	// only pays off when verbosity is TOP or CLOSEST
+	if cp.consideredSuggestions[suggestion] {
+		return true
+	}
+	cp.consideredSuggestions[suggestion] = true
+	cp.distance = s.distanceCompare(phrase, suggestion, cp.maxEditDistance2)
+	if cp.distance < 0 {
+		return true
+	}
+	return false
+}
+
+func (s *SymSpell) updateMinDistance(maxEditDistance int, cp *candidateProcessor) {
+	if s.PrefixLength-maxEditDistance == cp.candidateLen {
+		cp.minDistance = min(cp.phraseLen, cp.suggestionLen) - s.PrefixLength
+	} else {
+		cp.minDistance = 0
+	}
+}
+
+func (s *SymSpell) checkFirstRuneDistance(phrase string, suggestionRunes []rune, cp *candidateProcessor, suggestion string) bool {
+	var distanceCalc = func() int {
+		phraseRunesList := []rune(phrase)
+		// Check if the first rune of suggestion exists in phrase
+		if slices.Contains(phraseRunesList, suggestionRunes[0]) {
+			return cp.phraseLen - 1
+		} else {
+			return cp.phraseLen
+		}
+	}
+	cp.distance = distanceCalc()
+	if cp.distance > cp.maxEditDistance2 || cp.consideredSuggestions[suggestion] {
+		return true
+	}
+	return false
+}
+
+func (s *SymSpell) checkProcessShouldSkip(cp *candidateProcessor) bool {
+	if cp.minDistance > 1 &&
+		string(cp.phraseRunes[cp.phraseLen+1-cp.minDistance:]) != string(cp.suggestionRunes[cp.suggestionLen+1-cp.minDistance:]) {
+		return true
+	}
+	if cp.minDistance > 0 &&
+		cp.phraseRunes[cp.phraseLen-cp.minDistance] != cp.suggestionRunes[cp.suggestionLen-cp.minDistance] {
+		if cp.phraseRunes[cp.phraseLen-cp.minDistance-1] != cp.suggestionRunes[cp.suggestionLen-cp.minDistance] ||
+			cp.phraseRunes[cp.phraseLen-cp.minDistance] != cp.suggestionRunes[cp.suggestionLen-cp.minDistance-1] {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *SymSpell) updateSuggestions(suggestion string, cp *candidateProcessor) {
+	suggestionCount := s.Words[suggestion]
+	item := SuggestItem{Term: suggestion, Distance: cp.distance, Count: suggestionCount}
+
+	if len(cp.suggestions) > 0 {
+		if shouldContinue := s.updateBestSuggestion(cp, suggestionCount, item); shouldContinue {
+			return
+		}
+	}
+	// Update maxEditDistance2 if verbosity is not ALL
+	if cp.verbosity != verbositypkg.All {
+		cp.maxEditDistance2 = cp.distance
+	}
+	cp.suggestions = append(cp.suggestions, SuggestItem{Term: suggestion, Distance: cp.distance, Count: s.Words[suggestion]})
+	return
+}
+
+func (s *SymSpell) updateBestSuggestion(cp *candidateProcessor, suggestionCount int, item SuggestItem) bool {
+	if cp.verbosity == verbositypkg.Closest {
+		// Keep only the closest suggestions
+		if cp.distance < cp.maxEditDistance2 {
+			cp.suggestions = []SuggestItem{}
+		}
+	} else if cp.verbosity == verbositypkg.Top {
+		// Keep the top suggestion based on count or distance
+		if cp.distance < cp.maxEditDistance2 || suggestionCount > cp.suggestions[0].Count {
+			cp.maxEditDistance2 = cp.distance
+			cp.suggestions[0] = item
+		}
+		return true
+	}
+	return false
+}
+
+func (s *SymSpell) addEditDistance(candidateRunes []rune, cp *candidateProcessor) {
+	for i := 0; i < len(candidateRunes); i++ {
+		deleteItem := string(candidateRunes[:i]) + string(candidateRunes[i+1:])
+		if !cp.consideredDeletes[deleteItem] {
+			cp.consideredDeletes[deleteItem] = true
+			cp.candidates = append(cp.candidates, deleteItem)
+		}
+	}
 }
 
 func (s *SymSpell) distanceCompare(a, b string, maxDistance int) int {
@@ -249,10 +256,58 @@ func abs(a int) int {
 	return a
 }
 
-func incrementCount(count, countPrevious int) int {
-	// Ensure the count does not exceed the maximum value for int64
-	if math.MaxInt64-countPrevious > count {
-		return countPrevious + count
+type candidateProcessor struct {
+	candidates            []string
+	consideredDeletes     map[string]bool
+	consideredSuggestions map[string]bool
+	maxEditDistance2      int
+	candidatePointer      int
+	verbosity             verbositypkg.Verbosity
+	phraseLen             int
+	phraseRunes           []rune
+	candidateLen          int
+	distance              int
+	minDistance           int
+	suggestions           []SuggestItem
+	suggestionRunes       []rune
+	suggestionLen         int
+	lenDiff               int
+}
+
+func newCandidateProcessor(maxEditDistance int, verbosity verbositypkg.Verbosity, phrase string) candidateProcessor {
+	return candidateProcessor{
+		candidates:            make([]string, 0),
+		consideredDeletes:     make(map[string]bool),
+		consideredSuggestions: make(map[string]bool),
+		maxEditDistance2:      maxEditDistance,
+		candidatePointer:      0,
+		verbosity:             verbosity,
+		phraseLen:             len([]rune(phrase)),
+		phraseRunes:           []rune(phrase),
+		candidateLen:          0,
+		distance:              0,
+		minDistance:           0,
+		suggestions:           []SuggestItem{},
+		lenDiff:               0,
 	}
-	return math.MaxInt64
+}
+
+func (c *candidateProcessor) resetDistance() {
+	c.distance, c.minDistance = 0, 0
+}
+
+func (c *candidateProcessor) updateSuggestion(suggestion string) {
+	c.suggestionRunes = []rune(suggestion)
+	c.suggestionLen = len(c.suggestionRunes)
+}
+
+func (c *candidateProcessor) sortCandidate() {
+	if len(c.suggestions) > 1 {
+		sort.Slice(c.suggestions, func(i, j int) bool {
+			if c.suggestions[i].Distance == c.suggestions[j].Distance {
+				return c.suggestions[i].Count > c.suggestions[j].Count
+			}
+			return c.suggestions[i].Distance < c.suggestions[j].Distance
+		})
+	}
 }
