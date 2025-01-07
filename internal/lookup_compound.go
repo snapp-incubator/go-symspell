@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	verbositypkg "github.com/snapp-incubator/symspell/internal/verbosity"
+	verbositypkg "github.com/snapp-incubator/go-symspell/internal/verbosity"
 )
 
 func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {

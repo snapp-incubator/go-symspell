@@ -2,7 +2,7 @@ package internal
 
 import (
 	"errors"
-	verbositypkg "github.com/snapp-incubator/symspell/internal/verbosity"
+	verbositypkg "github.com/snapp-incubator/go-symspell/internal/verbosity"
 	"slices"
 	"sort"
 )

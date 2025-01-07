@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/snapp-incubator/symspell/internal/pkg/edit_distance"
+	"github.com/snapp-incubator/go-symspell/internal/pkg/edit_distance"
 )
 
 // SymSpell represents the Symmetric Delete spelling correction algorithm.
