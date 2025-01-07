@@ -3,8 +3,8 @@ package symspell
 import (
 	"log"
 
-	"github.com/snapp-incubator/symspell/internal"
-	"github.com/snapp-incubator/symspell/internal/verbosity"
+	"github.com/snapp-incubator/go-symspell/internal"
+	"github.com/snapp-incubator/go-symspell/internal/verbosity"
 )
 
 func NewSymSpell(opt ...internal.Options) *internal.SymSpell {

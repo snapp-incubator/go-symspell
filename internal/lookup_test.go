@@ -3,7 +3,7 @@ package internal
 import (
 	"testing"
 
-	verbositypkg "github.com/snapp-incubator/symspell/internal/verbosity"
+	verbositypkg "github.com/snapp-incubator/go-symspell/internal/verbosity"
 )
 
 func TestDeletes(t *testing.T) {

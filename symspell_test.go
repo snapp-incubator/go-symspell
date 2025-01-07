@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/snapp-incubator/symspell/internal/verbosity"
+	"github.com/snapp-incubator/go-symspell/internal/verbosity"
 )
 
 func TestSymspellLookup(t *testing.T) {
@@ -98,7 +98,7 @@ func TestLookupCompound(t *testing.T) {
 				a:               "Can yu readthis",
 				maxEditDistance: 2,
 			},
-			want: "wan you read this",
+			want: "can you read this",
 		},
 		{
 			name: "Test 3",
