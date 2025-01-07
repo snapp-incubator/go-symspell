@@ -7,7 +7,7 @@ import (
 	"github.com/snapp-incubator/go-symspell/internal/verbosity"
 )
 
-func NewSymSpell(opt ...internal.Options) *internal.SymSpell {
+func NewSymSpell(opt ...internal.Options) SymSpell {
 	symspell, err := internal.NewSymSpell(opt...)
 	if err != nil {
 		log.Fatal("[ERROR] ", err)
@@ -17,7 +17,7 @@ func NewSymSpell(opt ...internal.Options) *internal.SymSpell {
 }
 
 // NewSymSpellWithLoadDictionary used when want Lookup only
-func NewSymSpellWithLoadDictionary(dirPath string, termIndex, countIndex int, opt ...internal.Options) *internal.SymSpell {
+func NewSymSpellWithLoadDictionary(dirPath string, termIndex, countIndex int, opt ...internal.Options) SymSpell {
 	symspell := NewSymSpell(opt...)
 	ok, err := symspell.LoadDictionary(dirPath, termIndex, countIndex, " ")
 	if err != nil {
@@ -29,7 +29,7 @@ func NewSymSpellWithLoadDictionary(dirPath string, termIndex, countIndex int, op
 	return symspell
 }
 
-func NewSymSpellWithLoadBigramDictionary(vocabDirPath, bigramDirPath string, termIndex, countIndex int, opt ...internal.Options) *internal.SymSpell {
+func NewSymSpellWithLoadBigramDictionary(vocabDirPath, bigramDirPath string, termIndex, countIndex int, opt ...internal.Options) SymSpell {
 	symspell := NewSymSpell(opt...)
 	ok, err := symspell.LoadDictionary(vocabDirPath, termIndex, countIndex, " ")
 	if err != nil || !ok {
@@ -61,3 +61,10 @@ const (
 	Closest = verbosity.Closest
 	All     = verbosity.All
 )
+
+type SymSpell interface {
+	Lookup(phrase string, verbosity verbosity.Verbosity, maxEditDistance int) ([]internal.SuggestItem, error)
+	LookupCompound(phrase string, maxEditDistance int) *internal.SuggestItem
+	LoadBigramDictionary(corpusPath string, termIndex, countIndex int, separator string) (bool, error)
+	LoadDictionary(corpusPath string, termIndex int, countIndex int, separator string) (bool, error)
+}
