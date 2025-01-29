@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
+
+	"github.com/snapp-incubator/go-symspell/pkg/options"
 )
 
 type Entry struct {
@@ -36,9 +38,9 @@ func TestLookupCompound(t *testing.T) {
 
 	// Create a SymSpell instance
 	symSpell, _ := NewSymSpell(
-		WithCountThreshold(1),
-		WithMaxDictionaryEditDistance(3),
-		WithPrefixLength(10))
+		options.WithCountThreshold(1),
+		options.WithMaxDictionaryEditDistance(3),
+		options.WithPrefixLength(10))
 	_, _ = symSpell.LoadDictionary("./tests/vocab.txt", 0, 1, " ")
 
 	// Run test cases

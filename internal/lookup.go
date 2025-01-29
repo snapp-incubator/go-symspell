@@ -2,16 +2,18 @@ package internal
 
 import (
 	"errors"
-	verbositypkg "github.com/snapp-incubator/go-symspell/internal/verbosity"
 	"slices"
 	"sort"
+
+	"github.com/snapp-incubator/go-symspell/pkg/items"
+	verbositypkg "github.com/snapp-incubator/go-symspell/pkg/verbosity"
 )
 
 func (s *SymSpell) Lookup(
 	phrase string,
 	verbosity verbositypkg.Verbosity,
 	maxEditDistance int,
-) ([]SuggestItem, error) {
+) ([]items.SuggestItem, error) {
 	if maxEditDistance > s.MaxDictionaryEditDistance {
 		return nil, errors.New("distance too large")
 	}
@@ -52,7 +54,7 @@ func (s *SymSpell) getOriginPrefix(cp *candidateProcessor) []rune {
 
 func (s *SymSpell) checkExactMatch(phrase string, verbosity verbositypkg.Verbosity, cp *candidateProcessor) bool {
 	if count, found := s.Words[phrase]; found {
-		cp.suggestions = append(cp.suggestions, SuggestItem{Term: phrase, Distance: 0, Count: count})
+		cp.suggestions = append(cp.suggestions, items.SuggestItem{Term: phrase, Distance: 0, Count: count})
 		if verbosity != verbositypkg.All {
 			return true
 		}
@@ -197,7 +199,7 @@ func (s *SymSpell) checkProcessShouldSkip(cp *candidateProcessor) bool {
 
 func (s *SymSpell) updateSuggestions(suggestion string, cp *candidateProcessor) {
 	suggestionCount := s.Words[suggestion]
-	item := SuggestItem{Term: suggestion, Distance: cp.distance, Count: suggestionCount}
+	item := items.SuggestItem{Term: suggestion, Distance: cp.distance, Count: suggestionCount}
 
 	if len(cp.suggestions) > 0 {
 		if shouldContinue := s.updateBestSuggestion(cp, suggestionCount, item); shouldContinue {
@@ -208,15 +210,15 @@ func (s *SymSpell) updateSuggestions(suggestion string, cp *candidateProcessor) 
 	if cp.verbosity != verbositypkg.All {
 		cp.maxEditDistance2 = cp.distance
 	}
-	cp.suggestions = append(cp.suggestions, SuggestItem{Term: suggestion, Distance: cp.distance, Count: s.Words[suggestion]})
+	cp.suggestions = append(cp.suggestions, items.SuggestItem{Term: suggestion, Distance: cp.distance, Count: s.Words[suggestion]})
 	return
 }
 
-func (s *SymSpell) updateBestSuggestion(cp *candidateProcessor, suggestionCount int, item SuggestItem) bool {
+func (s *SymSpell) updateBestSuggestion(cp *candidateProcessor, suggestionCount int, item items.SuggestItem) bool {
 	if cp.verbosity == verbositypkg.Closest {
 		// Keep only the closest suggestions
 		if cp.distance < cp.maxEditDistance2 {
-			cp.suggestions = []SuggestItem{}
+			cp.suggestions = []items.SuggestItem{}
 		}
 	} else if cp.verbosity == verbositypkg.Top {
 		// Keep the top suggestion based on count or distance
@@ -268,7 +270,7 @@ type candidateProcessor struct {
 	candidateLen          int
 	distance              int
 	minDistance           int
-	suggestions           []SuggestItem
+	suggestions           []items.SuggestItem
 	suggestionRunes       []rune
 	suggestionLen         int
 	lenDiff               int
@@ -287,7 +289,7 @@ func newCandidateProcessor(maxEditDistance int, verbosity verbositypkg.Verbosity
 		candidateLen:          0,
 		distance:              0,
 		minDistance:           0,
-		suggestions:           []SuggestItem{},
+		suggestions:           []items.SuggestItem{},
 		lenDiff:               0,
 	}
 }
