@@ -168,12 +168,20 @@ func TestSymspellLookupCompoundUnigram(t *testing.T) {
 			},
 			want: "خیابان ملاصدرا",
 		},
+		{
+			name: "Test 6",
+			args: args{
+				a:               "کافه65",
+				maxEditDistance: 3,
+			},
+			want: "کافه 65",
+		},
 	}
 	symSpell := NewSymSpellWithLoadBigramDictionary("internal/tests/vocab_fa.txt",
 		"",
 		0,
 		1,
-		options.WithCountThreshold(10),
+		options.WithCountThreshold(1),
 		options.WithPrefixLength(5),
 		options.WithMaxDictionaryEditDistance(3),
 	)

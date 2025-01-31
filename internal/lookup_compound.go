@@ -24,10 +24,10 @@ func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
 	// Regex pattern to match words, including handling apostrophes
 	var pattern string
 	if preserveCase {
-		pattern = `(\p{L}+['’]*\p{L}*)`
+		pattern = `([\p{L}\d]+(?:['’][\p{L}\d]+)?)`
 	} else {
 		phrase = strings.ToLower(phrase)
-		pattern = `(\p{L}+['’]*\p{L}*)`
+		pattern = `([\p{L}\d]+(?:['’][\p{L}\d]+)?)`
 	}
 
 	re := regexp.MustCompile(pattern)
