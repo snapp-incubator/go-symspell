@@ -22,17 +22,16 @@ func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
 	}
 
 	// Regex pattern to match words, including handling apostrophes
-	pattern := `([\p{L}\d]+(?:['’][\p{L}\d]+)?)`
 	if !preserveCase {
 		phrase = strings.ToLower(phrase)
 	}
 
- 	return reSplit.FindAllString(phrase, -1)
- }
+	return reSplit.FindAllString(phrase, -1)
+}
 
 var reSplit = regexp.MustCompile(`([\p{L}\d]+(?:['’][\p{L}\d]+)?)`)
- 
- func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.SuggestItem {
+
+func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.SuggestItem {
 	terms1 := parseWords(phrase, s.PreserveCase, s.SplitWordBySpace)
 	cp := compoundProcessor{
 		suggestions:     make([]items.SuggestItem, 0),
