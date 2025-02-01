@@ -22,12 +22,9 @@ func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
 	}
 
 	// Regex pattern to match words, including handling apostrophes
-	var pattern string
-	if preserveCase {
-		pattern = `([\p{L}\d]+(?:['’][\p{L}\d]+)?)`
-	} else {
+	pattern := `([\p{L}\d]+(?:['’][\p{L}\d]+)?)`
+	if !preserveCase {
 		phrase = strings.ToLower(phrase)
-		pattern = `([\p{L}\d]+(?:['’][\p{L}\d]+)?)`
 	}
 
 	re := regexp.MustCompile(pattern)
@@ -35,7 +32,7 @@ func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
 }
 
 func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.SuggestItem {
-	terms1 := parseWords(phrase, false, false)
+	terms1 := parseWords(phrase, s.PreserveCase, s.SplitWordBySpace)
 	cp := compoundProcessor{
 		suggestions:     make([]items.SuggestItem, 0),
 		suggestionParts: make([]items.SuggestItem, 0),
@@ -68,7 +65,11 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.Sug
 			if len(cp.suggestions) > 0 {
 				suggestionSplitBest = &cp.suggestions[0]
 			}
-			if len(cp.terms1) > 1 {
+			shouldSplit := true
+			if suggestionSplitBest != nil && suggestionSplitBest.Count > s.SplitThreshold && len(terms1) == 1 {
+				shouldSplit = false
+			}
+			if len(cp.terms1) > 1 && shouldSplit {
 				runes := []rune(cp.terms1)
 				for j := 1; j < len(runes); j++ {
 					suggestions1, suggestions2, isValid := s.getSuggestions(runes, j, maxEditDistance)
