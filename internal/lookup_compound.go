@@ -27,11 +27,12 @@ func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
 		phrase = strings.ToLower(phrase)
 	}
 
-	re := regexp.MustCompile(pattern)
-	return re.FindAllString(phrase, -1)
-}
+ 	return reSplit.FindAllString(phrase, -1)
+ }
 
-func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.SuggestItem {
+var reSplit = regexp.MustCompile(`([\p{L}\d]+(?:['’][\p{L}\d]+)?)`)
+ 
+ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.SuggestItem {
 	terms1 := parseWords(phrase, s.PreserveCase, s.SplitWordBySpace)
 	cp := compoundProcessor{
 		suggestions:     make([]items.SuggestItem, 0),
