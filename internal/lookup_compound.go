@@ -14,18 +14,15 @@ import (
 )
 
 func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
-	if splitBySpace {
-		if preserveCase {
-			return strings.Split(phrase, " ")
-		}
-		return strings.Split(strings.ToLower(phrase), " ")
-	}
-
-	// Regex pattern to match words, including handling apostrophes
 	if !preserveCase {
 		phrase = strings.ToLower(phrase)
 	}
 
+	if splitBySpace {
+		return strings.Split(phrase, " ")
+	}
+
+	// Regex pattern to match words, including handling apostrophes
 	return reSplit.FindAllString(phrase, -1)
 }
 
