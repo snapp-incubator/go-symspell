@@ -9,7 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	verbositypkg "github.com/snapp-incubator/go-symspell/internal/verbosity"
+	"github.com/snapp-incubator/go-symspell/pkg/items"
+	verbositypkg "github.com/snapp-incubator/go-symspell/pkg/verbosity"
 )
 
 func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
@@ -23,22 +24,22 @@ func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
 	// Regex pattern to match words, including handling apostrophes
 	var pattern string
 	if preserveCase {
-		pattern = `(\p{L}+['’]*\p{L}*)`
+		pattern = `([\p{L}\d]+(?:['’][\p{L}\d]+)?)`
 	} else {
 		phrase = strings.ToLower(phrase)
-		pattern = `(\p{L}+['’]*\p{L}*)`
+		pattern = `([\p{L}\d]+(?:['’][\p{L}\d]+)?)`
 	}
 
 	re := regexp.MustCompile(pattern)
 	return re.FindAllString(phrase, -1)
 }
 
-func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *SuggestItem {
+func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.SuggestItem {
 	terms1 := parseWords(phrase, false, false)
 	cp := compoundProcessor{
-		suggestions:     make([]SuggestItem, 0),
-		suggestionParts: make([]SuggestItem, 0),
-		replacedWords:   make(map[string]SuggestItem),
+		suggestions:     make([]items.SuggestItem, 0),
+		suggestionParts: make([]items.SuggestItem, 0),
+		replacedWords:   make(map[string]items.SuggestItem),
 		isLastCombi:     false,
 	}
 	for i, _ := range terms1 {
@@ -63,7 +64,7 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *SuggestIt
 		if len(cp.suggestions) > 0 && (cp.suggestions[0].Distance == 0 || len(cp.terms1) == 1) {
 			cp.suggestionParts = append(cp.suggestionParts, cp.suggestions[0])
 		} else {
-			var suggestionSplitBest *SuggestItem
+			var suggestionSplitBest *items.SuggestItem
 			if len(cp.suggestions) > 0 {
 				suggestionSplitBest = &cp.suggestions[0]
 			}
@@ -92,7 +93,7 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *SuggestIt
 					// Check for bigrams
 					tmpCount := s.checkForBigram(&cp)
 
-					splitSuggestion := SuggestItem{Term: cp.tempTerm(), Distance: tmpDistance, Count: tmpCount}
+					splitSuggestion := items.SuggestItem{Term: cp.tempTerm(), Distance: tmpDistance, Count: tmpCount}
 					if suggestionSplitBest == nil || splitSuggestion.Count > suggestionSplitBest.Count {
 						suggestionSplitBest = &splitSuggestion
 					}
@@ -110,8 +111,8 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *SuggestIt
 	return s.finalizeAnswer(phrase, cp.suggestionParts)
 }
 
-func (s *SymSpell) getBestSuggestion2(cp compoundProcessor, maxEditDistance int) SuggestItem {
-	var best2 SuggestItem
+func (s *SymSpell) getBestSuggestion2(cp compoundProcessor, maxEditDistance int) items.SuggestItem {
+	var best2 items.SuggestItem
 	if len(cp.suggestions) > 0 {
 		best2 = cp.suggestions[0]
 	} else {
@@ -120,7 +121,7 @@ func (s *SymSpell) getBestSuggestion2(cp compoundProcessor, maxEditDistance int)
 	return best2
 }
 
-func (s *SymSpell) validateCombinationDistance(best1 SuggestItem, best2 SuggestItem, suggestionsCombine SuggestItem, cp *compoundProcessor) bool {
+func (s *SymSpell) validateCombinationDistance(best1 items.SuggestItem, best2 items.SuggestItem, suggestionsCombine items.SuggestItem, cp *compoundProcessor) bool {
 	distance1 := best1.Distance + best2.Distance
 
 	if distance1 >= 0 && suggestionsCombine.Distance+1 < distance1 ||
@@ -135,7 +136,7 @@ func (s *SymSpell) validateCombinationDistance(best1 SuggestItem, best2 SuggestI
 	return false
 }
 
-func (s *SymSpell) getSuggestions(runes []rune, split int, maxEditDistance int) (*SuggestItem, *SuggestItem, bool) {
+func (s *SymSpell) getSuggestions(runes []rune, split int, maxEditDistance int) (*items.SuggestItem, *items.SuggestItem, bool) {
 	part1 := string(runes[:split])
 	part2 := string(runes[split:])
 	suggestions1, _ := s.Lookup(part1, verbositypkg.Top, maxEditDistance)
@@ -178,12 +179,12 @@ func (s *SymSpell) checkForBigram(cp *compoundProcessor) int {
 	return tmpCount
 }
 
-func (c *compoundProcessor) updateReplaceWord(terms1 string, item SuggestItem) {
+func (c *compoundProcessor) updateReplaceWord(terms1 string, item items.SuggestItem) {
 	c.suggestionParts = append(c.suggestionParts, item)
 	c.replacedWords[terms1] = item
 }
 
-func (s *SymSpell) finalizeAnswer(phrase string, suggestionParts []SuggestItem) *SuggestItem {
+func (s *SymSpell) finalizeAnswer(phrase string, suggestionParts []items.SuggestItem) *items.SuggestItem {
 	joinedTerm := ""
 	joinedCount := s.N
 	for _, item := range suggestionParts {
@@ -192,18 +193,18 @@ func (s *SymSpell) finalizeAnswer(phrase string, suggestionParts []SuggestItem) 
 	}
 	joinedTerm = strings.TrimSpace(joinedTerm)
 
-	return &SuggestItem{
+	return &items.SuggestItem{
 		Term:     joinedTerm,
 		Distance: s.distanceCompare(phrase, joinedTerm, math.MaxInt32),
 		Count:    int(joinedCount),
 	}
 }
 
-func createWithProbability(term string, distance int) SuggestItem {
+func createWithProbability(term string, distance int) items.SuggestItem {
 	// Calculate Naive Bayes probability as the count
 	probabilityCount := int(10 / math.Pow(10, float64(len(term))))
 
-	return SuggestItem{
+	return items.SuggestItem{
 		Term:     term,
 		Distance: distance,
 		Count:    probabilityCount,
@@ -293,13 +294,13 @@ func (s *SymSpell) LoadBigramDictionary(
 }
 
 type compoundProcessor struct {
-	suggestions     []SuggestItem
-	suggestionParts []SuggestItem
-	replacedWords   map[string]SuggestItem
+	suggestions     []items.SuggestItem
+	suggestionParts []items.SuggestItem
+	replacedWords   map[string]items.SuggestItem
 	terms1          string
 	terms2          string
-	suggestion1     SuggestItem
-	suggestion2     SuggestItem
+	suggestion1     items.SuggestItem
+	suggestion2     items.SuggestItem
 	isLastCombi     bool
 }
 

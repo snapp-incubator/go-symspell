@@ -10,7 +10,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/snapp-incubator/go-symspell/internal/pkg/edit_distance"
+	"github.com/snapp-incubator/go-symspell/pkg/edit_distance"
+	"github.com/snapp-incubator/go-symspell/pkg/options"
 )
 
 // SymSpell represents the Symmetric Delete spelling correction algorithm.
@@ -29,16 +30,9 @@ type SymSpell struct {
 	BigramCountMin int
 }
 
-// SuggestItem represents a suggestion with distance and count (placeholder).
-type SuggestItem struct {
-	Term     string
-	Distance int
-	Count    int
-}
-
 // NewSymSpell is the constructor for the SymSpell struct.
-func NewSymSpell(opt ...Options) (*SymSpell, error) {
-	opts := DefaultOptions
+func NewSymSpell(opt ...options.Options) (*SymSpell, error) {
+	opts := options.DefaultOptions
 	for _, config := range opt {
 		config.Apply(&opts)
 	}

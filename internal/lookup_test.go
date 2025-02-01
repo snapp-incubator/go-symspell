@@ -3,14 +3,15 @@ package internal
 import (
 	"testing"
 
-	verbositypkg "github.com/snapp-incubator/go-symspell/internal/verbosity"
+	"github.com/snapp-incubator/go-symspell/pkg/options"
+	verbositypkg "github.com/snapp-incubator/go-symspell/pkg/verbosity"
 )
 
 func TestDeletes(t *testing.T) {
 	symSpell, _ := NewSymSpell(
-		WithCountThreshold(1),
-		WithMaxDictionaryEditDistance(2),
-		WithPrefixLength(7),
+		options.WithCountThreshold(1),
+		options.WithMaxDictionaryEditDistance(2),
+		options.WithPrefixLength(7),
 	)
 	symSpell.createDictionaryEntry("steama", 4)
 	symSpell.createDictionaryEntry("steamb", 6)
@@ -36,9 +37,9 @@ func TestDeletes(t *testing.T) {
 
 func TestWordsWithSharedPrefixShouldRetainCounts(t *testing.T) {
 	symSpell, err := NewSymSpell(
-		WithCountThreshold(4),
-		WithMaxDictionaryEditDistance(1),
-		WithPrefixLength(3),
+		options.WithCountThreshold(4),
+		options.WithMaxDictionaryEditDistance(1),
+		options.WithPrefixLength(3),
 	)
 	symSpell.createDictionaryEntry("pipe", 5)
 	symSpell.createDictionaryEntry("pips", 10)
@@ -95,7 +96,7 @@ func TestWordsWithSharedPrefixShouldRetainCounts(t *testing.T) {
 }
 
 func TestVerbosityShouldControlLookupResults(t *testing.T) {
-	symSpell, err := NewSymSpell(WithCountThreshold(0))
+	symSpell, err := NewSymSpell(options.WithCountThreshold(0))
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -123,7 +124,7 @@ func TestVerbosityShouldControlLookupResults(t *testing.T) {
 }
 
 func TestShouldReturnMostFrequent(t *testing.T) {
-	symSpell, _ := NewSymSpell(WithCountThreshold(1), WithMaxDictionaryEditDistance(2))
+	symSpell, _ := NewSymSpell(options.WithCountThreshold(1), options.WithMaxDictionaryEditDistance(2))
 	symSpell.createDictionaryEntry("steama", 4)
 	symSpell.createDictionaryEntry("steamb", 6)
 	symSpell.createDictionaryEntry("steamc", 2)
@@ -147,7 +148,7 @@ func TestShouldReturnMostFrequent(t *testing.T) {
 }
 
 func TestShouldFindExactMatch(t *testing.T) {
-	symSpell, err := NewSymSpell(WithCountThreshold(1))
+	symSpell, err := NewSymSpell(options.WithCountThreshold(1))
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -170,7 +171,7 @@ func TestShouldFindExactMatch(t *testing.T) {
 }
 
 func TestShouldNotReturnNonWordDelete(t *testing.T) {
-	symSpell, err := NewSymSpell(WithCountThreshold(10))
+	symSpell, err := NewSymSpell(options.WithCountThreshold(10))
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -189,7 +190,7 @@ func TestShouldNotReturnNonWordDelete(t *testing.T) {
 }
 
 func TestShouldNotReturnLowCountWord(t *testing.T) {
-	symSpell, _ := NewSymSpell(WithCountThreshold(10))
+	symSpell, _ := NewSymSpell(options.WithCountThreshold(10))
 	symSpell.createDictionaryEntry("pawn", 1)
 
 	results, err := symSpell.Lookup("pawn", verbositypkg.Closest, 0)
@@ -203,7 +204,7 @@ func TestShouldNotReturnLowCountWord(t *testing.T) {
 }
 
 func TestShouldNotReturnLowCountWordThatAreAlsoDeleteWord(t *testing.T) {
-	symSpell, _ := NewSymSpell(WithCountThreshold(10))
+	symSpell, _ := NewSymSpell(options.WithCountThreshold(10))
 	symSpell.createDictionaryEntry("flame", 20)
 	symSpell.createDictionaryEntry("flam", 1)
 
@@ -217,7 +218,7 @@ func TestShouldNotReturnLowCountWordThatAreAlsoDeleteWord(t *testing.T) {
 }
 
 func TestMaxEditDistanceTooLarge(t *testing.T) {
-	symSpell, _ := NewSymSpell(WithCountThreshold(10))
+	symSpell, _ := NewSymSpell(options.WithCountThreshold(10))
 	symSpell.createDictionaryEntry("flame", 20)
 	symSpell.createDictionaryEntry("flam", 1)
 
@@ -281,7 +282,7 @@ func TestTransferCasing(t *testing.T) {
 }
 
 func TestFarsi(t *testing.T) {
-	symSpell, err := NewSymSpell(WithCountThreshold(1))
+	symSpell, err := NewSymSpell(options.WithCountThreshold(1))
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}

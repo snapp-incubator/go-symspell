@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/snapp-incubator/go-symspell/internal/verbosity"
+	"github.com/snapp-incubator/go-symspell/pkg/options"
+	"github.com/snapp-incubator/go-symspell/pkg/verbosity"
 )
 
 func TestSymspellLookup(t *testing.T) {
@@ -56,9 +57,9 @@ func TestSymspellLookup(t *testing.T) {
 		},
 	}
 	symSpell := NewSymSpellWithLoadDictionary("internal/tests/vocab_fa.txt", 0, 1,
-		WithCountThreshold(10),
-		WithMaxDictionaryEditDistance(3),
-		WithPrefixLength(5),
+		options.WithCountThreshold(10),
+		options.WithMaxDictionaryEditDistance(3),
+		options.WithPrefixLength(5),
 	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -111,9 +112,9 @@ func TestLookupCompound(t *testing.T) {
 	}
 	symSpell := NewSymSpellWithLoadBigramDictionary("internal/tests/vocab.txt", "internal/tests/vocab_bigram.txt",
 		0, 1,
-		WithCountThreshold(1),
-		WithMaxDictionaryEditDistance(3),
-		WithPrefixLength(7),
+		options.WithCountThreshold(1),
+		options.WithMaxDictionaryEditDistance(3),
+		options.WithPrefixLength(7),
 	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -167,14 +168,22 @@ func TestSymspellLookupCompoundUnigram(t *testing.T) {
 			},
 			want: "خیابان ملاصدرا",
 		},
+		{
+			name: "Test 6",
+			args: args{
+				a:               "کافه65",
+				maxEditDistance: 3,
+			},
+			want: "کافه 65",
+		},
 	}
 	symSpell := NewSymSpellWithLoadBigramDictionary("internal/tests/vocab_fa.txt",
 		"",
 		0,
 		1,
-		WithCountThreshold(10),
-		WithPrefixLength(5),
-		WithMaxDictionaryEditDistance(3),
+		options.WithCountThreshold(1),
+		options.WithPrefixLength(5),
+		options.WithMaxDictionaryEditDistance(3),
 	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

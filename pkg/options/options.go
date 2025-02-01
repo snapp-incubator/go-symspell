@@ -1,4 +1,4 @@
-package internal
+package options
 
 var DefaultOptions = SymspellOptions{
 	MaxDictionaryEditDistance: 2,

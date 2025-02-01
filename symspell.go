@@ -4,20 +4,21 @@ import (
 	"log"
 
 	"github.com/snapp-incubator/go-symspell/internal"
-	"github.com/snapp-incubator/go-symspell/internal/verbosity"
+	"github.com/snapp-incubator/go-symspell/pkg/items"
+	"github.com/snapp-incubator/go-symspell/pkg/options"
+	"github.com/snapp-incubator/go-symspell/pkg/verbosity"
 )
 
-func NewSymSpell(opt ...internal.Options) SymSpell {
+func NewSymSpell(opt ...options.Options) SymSpell {
 	symspell, err := internal.NewSymSpell(opt...)
 	if err != nil {
 		log.Fatal("[ERROR] ", err)
 	}
 	return symspell
-
 }
 
 // NewSymSpellWithLoadDictionary used when want Lookup only
-func NewSymSpellWithLoadDictionary(dirPath string, termIndex, countIndex int, opt ...internal.Options) SymSpell {
+func NewSymSpellWithLoadDictionary(dirPath string, termIndex, countIndex int, opt ...options.Options) SymSpell {
 	symspell := NewSymSpell(opt...)
 	ok, err := symspell.LoadDictionary(dirPath, termIndex, countIndex, " ")
 	if err != nil {
@@ -29,7 +30,7 @@ func NewSymSpellWithLoadDictionary(dirPath string, termIndex, countIndex int, op
 	return symspell
 }
 
-func NewSymSpellWithLoadBigramDictionary(vocabDirPath, bigramDirPath string, termIndex, countIndex int, opt ...internal.Options) SymSpell {
+func NewSymSpellWithLoadBigramDictionary(vocabDirPath, bigramDirPath string, termIndex, countIndex int, opt ...options.Options) SymSpell {
 	symspell := NewSymSpell(opt...)
 	ok, err := symspell.LoadDictionary(vocabDirPath, termIndex, countIndex, " ")
 	if err != nil || !ok {
@@ -44,27 +45,9 @@ func NewSymSpellWithLoadBigramDictionary(vocabDirPath, bigramDirPath string, ter
 	return symspell
 }
 
-func WithMaxDictionaryEditDistance(maxDictionaryEditDistance int) internal.Options {
-	return internal.WithMaxDictionaryEditDistance(maxDictionaryEditDistance)
-}
-
-func WithPrefixLength(prefixLength int) internal.Options {
-	return internal.WithPrefixLength(prefixLength)
-}
-
-func WithCountThreshold(countThreshold int) internal.Options {
-	return internal.WithCountThreshold(countThreshold)
-}
-
-const (
-	Top     = verbosity.Top
-	Closest = verbosity.Closest
-	All     = verbosity.All
-)
-
 type SymSpell interface {
-	Lookup(phrase string, verbosity verbosity.Verbosity, maxEditDistance int) ([]internal.SuggestItem, error)
-	LookupCompound(phrase string, maxEditDistance int) *internal.SuggestItem
+	Lookup(phrase string, verbosity verbosity.Verbosity, maxEditDistance int) ([]items.SuggestItem, error)
+	LookupCompound(phrase string, maxEditDistance int) *items.SuggestItem
 	LoadBigramDictionary(corpusPath string, termIndex, countIndex int, separator string) (bool, error)
 	LoadDictionary(corpusPath string, termIndex int, countIndex int, separator string) (bool, error)
 }
