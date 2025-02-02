@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/snapp-incubator/go-symspell/pkg/edit_distance"
+	"github.com/snapp-incubator/go-symspell/pkg/editdistance"
 	"github.com/snapp-incubator/go-symspell/pkg/options"
 )
 
@@ -26,7 +26,7 @@ type SymSpell struct {
 	BelowThresholdWords       map[string]int
 	Deletes                   map[string][]string
 	maxLength                 int
-	distanceComparer          edit_distance.IEditDistance
+	distanceComparer          editdistance.IEditDistance
 	// lookup compound
 	N              float64
 	Bigrams        map[string]int
@@ -62,7 +62,7 @@ func NewSymSpell(opt ...options.Options) (*SymSpell, error) {
 		Words:                     make(map[string]int),
 		BelowThresholdWords:       make(map[string]int),
 		Deletes:                   make(map[string][]string),
-		distanceComparer:          edit_distance.NewEditDistance(edit_distance.DamerauLevenshtein), // todo add more edit distance algorithms
+		distanceComparer:          editdistance.NewEditDistance(editdistance.DamerauLevenshtein), // todo add more edit distance algorithms
 		maxLength:                 0,
 		Bigrams:                   make(map[string]int),
 		N:                         1024908267229,

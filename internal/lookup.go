@@ -151,10 +151,7 @@ func (s *SymSpell) checkDistanceToSkip(phrase string, maxEditDistance int, cp *c
 	}
 	cp.consideredSuggestions[suggestion] = true
 	cp.distance = s.distanceCompare(phrase, suggestion, cp.maxEditDistance2)
-	if cp.distance < 0 {
-		return true
-	}
-	return false
+	return cp.distance < 0
 }
 
 func (s *SymSpell) updateMinDistance(maxEditDistance int, cp *candidateProcessor) {
@@ -171,9 +168,8 @@ func (s *SymSpell) checkFirstRuneDistance(phrase string, suggestionRunes []rune,
 		// Check if the first rune of suggestion exists in phrase
 		if slices.Contains(phraseRunesList, suggestionRunes[0]) {
 			return cp.phraseLen - 1
-		} else {
-			return cp.phraseLen
 		}
+		return cp.phraseLen
 	}
 	cp.distance = distanceCalc()
 	if cp.distance > cp.maxEditDistance2 || cp.consideredSuggestions[suggestion] {
@@ -211,7 +207,6 @@ func (s *SymSpell) updateSuggestions(suggestion string, cp *candidateProcessor) 
 		cp.maxEditDistance2 = cp.distance
 	}
 	cp.suggestions = append(cp.suggestions, items.SuggestItem{Term: suggestion, Distance: cp.distance, Count: s.Words[suggestion]})
-	return
 }
 
 func (s *SymSpell) updateBestSuggestion(cp *candidateProcessor, suggestionCount int, item items.SuggestItem) bool {

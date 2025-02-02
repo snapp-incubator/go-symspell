@@ -36,7 +36,7 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.Sug
 		replacedWords:   make(map[string]items.SuggestItem),
 		isLastCombi:     false,
 	}
-	for i, _ := range terms1 {
+	for i := range terms1 {
 		cp.terms1 = terms1[i]
 		cp.suggestions, _ = s.Lookup(cp.terms1, verbositypkg.Top, maxEditDistance)
 		// Combine adjacent terms
@@ -125,7 +125,7 @@ func (s *SymSpell) validateCombinationDistance(best1 items.SuggestItem, best2 it
 	if distance1 >= 0 && suggestionsCombine.Distance+1 < distance1 ||
 		(suggestionsCombine.Distance+1 == distance1 &&
 			float64(suggestionsCombine.Count) > (float64(best1.Count)/s.N)*float64(best2.Count)) {
-		suggestionsCombine.Distance += 1
+		suggestionsCombine.Distance++
 		cp.suggestionParts[len(cp.suggestionParts)-1] = suggestionsCombine
 		cp.replacedWords[cp.terms2] = suggestionsCombine
 		cp.isLastCombi = true

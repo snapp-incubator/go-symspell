@@ -1,4 +1,4 @@
-package edit_distance
+package editdistance
 
 type IEditDistance interface {
 	Distance(a, b string) int
