@@ -14,28 +14,22 @@ import (
 )
 
 func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
+	if !preserveCase {
+		phrase = strings.ToLower(phrase)
+	}
+
 	if splitBySpace {
-		if preserveCase {
-			return strings.Split(phrase, " ")
-		}
-		return strings.Split(strings.ToLower(phrase), " ")
+		return strings.Split(phrase, " ")
 	}
 
 	// Regex pattern to match words, including handling apostrophes
-	var pattern string
-	if preserveCase {
-		pattern = `([\p{L}\d]+(?:['’][\p{L}\d]+)?)`
-	} else {
-		phrase = strings.ToLower(phrase)
-		pattern = `([\p{L}\d]+(?:['’][\p{L}\d]+)?)`
-	}
-
-	re := regexp.MustCompile(pattern)
-	return re.FindAllString(phrase, -1)
+	return reSplit.FindAllString(phrase, -1)
 }
 
+var reSplit = regexp.MustCompile(`([\p{L}\d]+(?:['’][\p{L}\d]+)?)`)
+
 func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.SuggestItem {
-	terms1 := parseWords(phrase, false, false)
+	terms1 := parseWords(phrase, s.PreserveCase, s.SplitWordBySpace)
 	cp := compoundProcessor{
 		suggestions:     make([]items.SuggestItem, 0),
 		suggestionParts: make([]items.SuggestItem, 0),
@@ -68,7 +62,11 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.Sug
 			if len(cp.suggestions) > 0 {
 				suggestionSplitBest = &cp.suggestions[0]
 			}
-			if len(cp.terms1) > 1 {
+			shouldSplit := true
+			if suggestionSplitBest != nil && suggestionSplitBest.Count > s.SplitThreshold && len(terms1) == 1 {
+				shouldSplit = false
+			}
+			if len(cp.terms1) > 1 && shouldSplit {
 				runes := []rune(cp.terms1)
 				for j := 1; j < len(runes); j++ {
 					suggestions1, suggestions2, isValid := s.getSuggestions(runes, j, maxEditDistance)

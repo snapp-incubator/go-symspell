@@ -19,6 +19,9 @@ type SymSpell struct {
 	MaxDictionaryEditDistance int
 	PrefixLength              int
 	CountThreshold            int
+	SplitThreshold            int
+	PreserveCase              bool
+	SplitWordBySpace          bool
 	Words                     map[string]int
 	BelowThresholdWords       map[string]int
 	Deletes                   map[string][]string
@@ -53,6 +56,9 @@ func NewSymSpell(opt ...options.Options) (*SymSpell, error) {
 		MaxDictionaryEditDistance: opts.MaxDictionaryEditDistance,
 		PrefixLength:              opts.PrefixLength,
 		CountThreshold:            opts.CountThreshold,
+		SplitThreshold:            opts.SplitItemThreshold,
+		PreserveCase:              opts.PreserveCase,
+		SplitWordBySpace:          opts.SplitWordBySpace,
 		Words:                     make(map[string]int),
 		BelowThresholdWords:       make(map[string]int),
 		Deletes:                   make(map[string][]string),

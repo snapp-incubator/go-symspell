@@ -4,12 +4,18 @@ var DefaultOptions = SymspellOptions{
 	MaxDictionaryEditDistance: 2,
 	PrefixLength:              7,
 	CountThreshold:            1,
+	SplitItemThreshold:        1,
+	PreserveCase:              false,
+	SplitWordBySpace:          false,
 }
 
 type SymspellOptions struct {
 	MaxDictionaryEditDistance int
 	PrefixLength              int
 	CountThreshold            int
+	SplitItemThreshold        int
+	PreserveCase              bool
+	SplitWordBySpace          bool
 }
 
 type Options interface {
@@ -43,5 +49,23 @@ func WithPrefixLength(prefixLength int) Options {
 func WithCountThreshold(countThreshold int) Options {
 	return NewFuncWireOption(func(options *SymspellOptions) {
 		options.CountThreshold = countThreshold
+	})
+}
+
+func WithSplitItemThreshold(splitThreshold int) Options {
+	return NewFuncWireOption(func(options *SymspellOptions) {
+		options.SplitItemThreshold = splitThreshold
+	})
+}
+
+func WithPreserveCase() Options {
+	return NewFuncWireOption(func(options *SymspellOptions) {
+		options.PreserveCase = true
+	})
+}
+
+func WithSplitWordBySpace() Options {
+	return NewFuncWireOption(func(options *SymspellOptions) {
+		options.SplitWordBySpace = true
 	})
 }

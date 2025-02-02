@@ -40,7 +40,8 @@ func TestLookupCompound(t *testing.T) {
 	symSpell, _ := NewSymSpell(
 		options.WithCountThreshold(1),
 		options.WithMaxDictionaryEditDistance(3),
-		options.WithPrefixLength(10))
+		options.WithPrefixLength(10),
+		options.WithSplitItemThreshold(1))
 	_, _ = symSpell.LoadDictionary("./tests/vocab.txt", 0, 1, " ")
 
 	// Run test cases
