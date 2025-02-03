@@ -86,12 +86,12 @@ func (s *SymSpell) createDictionaryEntry(key string, count int) bool {
 			// Increment the count
 			count = incrementCount(count, countPrev)
 			// Check if it reaches the threshold
-			if count >= s.CountThreshold {
-				delete(s.BelowThresholdWords, key)
-			} else {
+			if count < s.CountThreshold {
 				s.BelowThresholdWords[key] = count
 				return false
+
 			}
+			delete(s.BelowThresholdWords, key)
 		}
 	} else if countPrev, found := s.Words[key]; found {
 		// Increment the count
