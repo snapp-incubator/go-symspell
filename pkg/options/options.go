@@ -7,6 +7,7 @@ var DefaultOptions = SymspellOptions{
 	SplitItemThreshold:        1,
 	PreserveCase:              false,
 	SplitWordBySpace:          false,
+	MinimumCharacterToChange:  1,
 }
 
 type SymspellOptions struct {
@@ -16,6 +17,7 @@ type SymspellOptions struct {
 	SplitItemThreshold        int
 	PreserveCase              bool
 	SplitWordBySpace          bool
+	MinimumCharacterToChange  int
 }
 
 type Options interface {
@@ -67,5 +69,11 @@ func WithPreserveCase() Options {
 func WithSplitWordBySpace() Options {
 	return NewFuncWireOption(func(options *SymspellOptions) {
 		options.SplitWordBySpace = true
+	})
+}
+
+func WithMinimumCharacterToChange(charLength int) Options {
+	return NewFuncWireOption(func(options *SymspellOptions) {
+		options.MinimumCharacterToChange = charLength
 	})
 }

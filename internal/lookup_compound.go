@@ -38,7 +38,7 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.Sug
 	}
 	for i := range terms1 {
 		cp.terms1 = terms1[i]
-		cp.suggestions, _ = s.Lookup(cp.terms1, verbositypkg.Top, maxEditDistance)
+		s.getSuggestion(&cp, maxEditDistance)
 		// Combine adjacent terms
 		if i > 0 && !cp.isLastCombi {
 			cp.terms2 = terms1[i-1]
@@ -107,6 +107,18 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.Sug
 	}
 
 	return s.finalizeAnswer(phrase, cp.suggestionParts)
+}
+
+func (s *SymSpell) getSuggestion(cp *compoundProcessor, maxEditDistance int) {
+	if len(cp.terms1) > s.MinimumCharToChange {
+		cp.suggestions, _ = s.Lookup(cp.terms1, verbositypkg.Top, maxEditDistance)
+	} else {
+		cp.suggestions = []items.SuggestItem{{
+			Term:     cp.terms1,
+			Distance: 0,
+			Count:    math.MaxInt,
+		}}
+	}
 }
 
 func (s *SymSpell) getBestSuggestion2(cp compoundProcessor, maxEditDistance int) items.SuggestItem {
