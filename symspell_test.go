@@ -110,7 +110,7 @@ func TestLookupCompound(t *testing.T) {
 			want: "secret plan",
 		},
 	}
-	symSpell := NewSymSpellWithLoadBigramDictionary("internal/tests/vocab.txt", "internal/tests/vocab_bigram.txt",
+	symSpell := NewSymSpellWithLoadBigramDictionary("internal/tests/vocab.txt", "internal/tests/vocab_bigram.txt", "",
 		0, 1,
 		options.WithCountThreshold(1),
 		options.WithMaxDictionaryEditDistance(3),
@@ -209,10 +209,35 @@ func TestSymspellLookupCompoundUnigram(t *testing.T) {
 			},
 			want: "خرداد 15",
 		},
+		{
+			name: "Exact Match 1",
+			args: args{
+				a:               "م ازادی",
+				maxEditDistance: 3,
+			},
+			want: "میدان ازادی",
+		},
+		{
+			name: "Exact Match 2",
+			args: args{
+				a:               "خ ازادی",
+				maxEditDistance: 3,
+			},
+			want: "خیابان ازادی",
+		},
+		{
+			name: "Exact Match 3",
+			args: args{
+				a:               "تهران خ ازادی",
+				maxEditDistance: 3,
+			},
+			want: "تهران خیابان ازادی",
+		},
 	}
 	symSpell := NewSymSpellWithLoadBigramDictionary(
 		"internal/tests/vocab_fa.txt",
 		"internal/tests/vocab_bigram_fa.txt",
+		"internal/tests/exact.txt",
 		0,
 		1,
 		options.WithCountThreshold(0),

@@ -41,7 +41,7 @@ func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.Sug
 		isLastCombi:     false,
 	}
 	for i := range terms1 {
-		cp.terms1 = terms1[i]
+		cp.terms1 = s.replaceExactMatch(terms1[i])
 		s.getSuggestion(&cp, maxEditDistance)
 		// Combine adjacent terms
 		if i > 0 && !cp.isLastCombi {
@@ -212,6 +212,13 @@ func (s *SymSpell) finalizeAnswer(phrase string, suggestionParts []items.Suggest
 		Distance: s.distanceCompare(phrase, joinedTerm, math.MaxInt32),
 		Count:    int(joinedCount),
 	}
+}
+
+func (s *SymSpell) replaceExactMatch(phrase string) string {
+	if result, found := s.ExactTransform[phrase]; found {
+		return result
+	}
+	return phrase
 }
 
 func createWithProbability(term string, distance int) items.SuggestItem {
