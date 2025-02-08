@@ -22,6 +22,7 @@ type SymSpell struct {
 	SplitThreshold            int
 	PreserveCase              bool
 	SplitWordBySpace          bool
+	SplitWordAndNumber        bool
 	MinimumCharToChange       int
 	Words                     map[string]int
 	BelowThresholdWords       map[string]int
@@ -60,6 +61,7 @@ func NewSymSpell(opt ...options.Options) (*SymSpell, error) {
 		SplitThreshold:            opts.SplitItemThreshold,
 		PreserveCase:              opts.PreserveCase,
 		SplitWordBySpace:          opts.SplitWordBySpace,
+		SplitWordAndNumber:        opts.SplitWordAndNumber,
 		MinimumCharToChange:       opts.MinimumCharacterToChange,
 		Words:                     make(map[string]int),
 		BelowThresholdWords:       make(map[string]int),

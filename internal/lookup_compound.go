@@ -8,17 +8,21 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/snapp-incubator/go-symspell/pkg/items"
 	verbositypkg "github.com/snapp-incubator/go-symspell/pkg/verbosity"
 )
 
-func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
+func parseWords(phrase string, preserveCase, splitBySpace, splitNumber bool) []string {
 	if !preserveCase {
 		phrase = strings.ToLower(phrase)
 	}
 
 	if splitBySpace {
+		if splitNumber {
+			return separateNumbers(strings.Split(phrase, " "))
+		}
 		return strings.Split(phrase, " ")
 	}
 
@@ -29,7 +33,7 @@ func parseWords(phrase string, preserveCase bool, splitBySpace bool) []string {
 var reSplit = regexp.MustCompile(`([\p{L}\d]+(?:['’][\p{L}\d]+)?)`)
 
 func (s *SymSpell) LookupCompound(phrase string, maxEditDistance int) *items.SuggestItem {
-	terms1 := parseWords(phrase, s.PreserveCase, s.SplitWordBySpace)
+	terms1 := parseWords(phrase, s.PreserveCase, s.SplitWordBySpace, s.SplitWordAndNumber)
 	cp := compoundProcessor{
 		suggestions:     make([]items.SuggestItem, 0),
 		suggestionParts: make([]items.SuggestItem, 0),
@@ -316,4 +320,64 @@ type compoundProcessor struct {
 
 func (c *compoundProcessor) tempTerm() string {
 	return fmt.Sprintf("%s %s", c.suggestion1.Term, c.suggestion2.Term)
+}
+
+func separateNumbers(inputs []string) []string {
+	var results []string
+	for _, input := range inputs {
+		if len(input) == 0 {
+			continue
+		}
+		results = append(results, splitWordAndNumber(input)...)
+	}
+
+	return results
+}
+
+func splitWordAndNumber(input string) []string {
+	// Convert the input string to runes so that we handle Unicode correctly.
+	runes := []rune(input)
+	// Determine the type of the first rune.
+	// We'll use: 1 for digit, 2 for letter, and 0 for any other character.
+	var firstType int
+	if unicode.IsDigit(runes[0]) {
+		firstType = 1
+	} else if unicode.IsLetter(runes[0]) {
+		firstType = 2
+	} else {
+		firstType = 0
+	}
+	// Find the index of the first rune whose type differs from the firstType.
+	transitionIndex := -1
+	for i, r := range runes {
+		// Skip the first character.
+		if i == 0 {
+			continue
+		}
+
+		var currentType int
+		if unicode.IsDigit(r) {
+			currentType = 1
+		} else if unicode.IsLetter(r) {
+			currentType = 2
+		} else {
+			currentType = 0
+		}
+
+		if currentType != firstType {
+			transitionIndex = i
+			break
+		}
+	}
+
+	// If no transition is found, use the whole string as is.
+	if transitionIndex == -1 {
+		return []string{input}
+	}
+	// Split into two groups: group1 is from the beginning to the transition,
+	// group2 is from the transition until the end.
+	group1 := string(runes[:transitionIndex])
+	group2 := string(runes[transitionIndex:])
+	// Combine the groups with a space.
+	return []string{group1, group2}
 }

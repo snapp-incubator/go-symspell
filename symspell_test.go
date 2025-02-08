@@ -193,8 +193,25 @@ func TestSymspellLookupCompoundUnigram(t *testing.T) {
 			},
 			want: "بیمارستان ا",
 		},
+		{
+			name: "Split Number",
+			args: args{
+				a:               "17شهریور",
+				maxEditDistance: 3,
+			},
+			want: "17 شهریور",
+		},
+		{
+			name: "Split Number2",
+			args: args{
+				a:               "خرداد15",
+				maxEditDistance: 3,
+			},
+			want: "خرداد 15",
+		},
 	}
-	symSpell := NewSymSpellWithLoadBigramDictionary("internal/tests/vocab_fa.txt",
+	symSpell := NewSymSpellWithLoadBigramDictionary(
+		"internal/tests/vocab_fa.txt",
 		"internal/tests/vocab_bigram_fa.txt",
 		0,
 		1,
@@ -204,6 +221,7 @@ func TestSymspellLookupCompoundUnigram(t *testing.T) {
 		options.WithSplitItemThreshold(100),
 		options.WithSplitWordBySpace(),
 		options.WithMinimumCharacterToChange(2),
+		options.WithSplitWordAndNumbers(),
 	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

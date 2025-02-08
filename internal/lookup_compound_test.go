@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/json"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/snapp-incubator/go-symspell/pkg/options"
@@ -80,5 +81,38 @@ func TestLookupCompound(t *testing.T) {
 				t.Errorf("Bigram: Expected count %d, got %d for typo '%s'", entry.Bigram.Count, results.Count, entry.Typo)
 			}
 		}
+	}
+}
+
+func Test_separateNumbers(t *testing.T) {
+	type args struct {
+		inputs string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "first number",
+			args: args{
+				inputs: "15خرداد",
+			},
+			want: []string{"15", "خرداد"},
+		},
+		{
+			name: "first word",
+			args: args{
+				inputs: "خرداد15",
+			},
+			want: []string{"خرداد", "15"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := splitWordAndNumber(tt.args.inputs); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("separateNumbers() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

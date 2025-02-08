@@ -7,6 +7,7 @@ var DefaultOptions = SymspellOptions{
 	SplitItemThreshold:        1,
 	PreserveCase:              false,
 	SplitWordBySpace:          false,
+	SplitWordAndNumber:        false,
 	MinimumCharacterToChange:  1,
 }
 
@@ -17,6 +18,7 @@ type SymspellOptions struct {
 	SplitItemThreshold        int
 	PreserveCase              bool
 	SplitWordBySpace          bool
+	SplitWordAndNumber        bool
 	MinimumCharacterToChange  int
 }
 
@@ -32,48 +34,54 @@ func (w FuncConfig) Apply(conf *SymspellOptions) {
 	w.ops(conf)
 }
 
-func NewFuncWireOption(f func(options *SymspellOptions)) *FuncConfig {
+func NewFuncOption(f func(options *SymspellOptions)) *FuncConfig {
 	return &FuncConfig{ops: f}
 }
 
 func WithMaxDictionaryEditDistance(maxDictionaryEditDistance int) Options {
-	return NewFuncWireOption(func(options *SymspellOptions) {
+	return NewFuncOption(func(options *SymspellOptions) {
 		options.MaxDictionaryEditDistance = maxDictionaryEditDistance
 	})
 }
 
 func WithPrefixLength(prefixLength int) Options {
-	return NewFuncWireOption(func(options *SymspellOptions) {
+	return NewFuncOption(func(options *SymspellOptions) {
 		options.PrefixLength = prefixLength
 	})
 }
 
 func WithCountThreshold(countThreshold int) Options {
-	return NewFuncWireOption(func(options *SymspellOptions) {
+	return NewFuncOption(func(options *SymspellOptions) {
 		options.CountThreshold = countThreshold
 	})
 }
 
 func WithSplitItemThreshold(splitThreshold int) Options {
-	return NewFuncWireOption(func(options *SymspellOptions) {
+	return NewFuncOption(func(options *SymspellOptions) {
 		options.SplitItemThreshold = splitThreshold
 	})
 }
 
 func WithPreserveCase() Options {
-	return NewFuncWireOption(func(options *SymspellOptions) {
+	return NewFuncOption(func(options *SymspellOptions) {
 		options.PreserveCase = true
 	})
 }
 
 func WithSplitWordBySpace() Options {
-	return NewFuncWireOption(func(options *SymspellOptions) {
+	return NewFuncOption(func(options *SymspellOptions) {
 		options.SplitWordBySpace = true
 	})
 }
 
 func WithMinimumCharacterToChange(charLength int) Options {
-	return NewFuncWireOption(func(options *SymspellOptions) {
+	return NewFuncOption(func(options *SymspellOptions) {
 		options.MinimumCharacterToChange = charLength
+	})
+}
+
+func WithSplitWordAndNumbers() Options {
+	return NewFuncOption(func(options *SymspellOptions) {
+		options.SplitWordAndNumber = true
 	})
 }
