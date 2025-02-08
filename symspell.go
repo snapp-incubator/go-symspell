@@ -30,7 +30,7 @@ func NewSymSpellWithLoadDictionary(dirPath string, termIndex, countIndex int, op
 	return symspell
 }
 
-func NewSymSpellWithLoadBigramDictionary(vocabDirPath, bigramDirPath string, termIndex, countIndex int, opt ...options.Options) SymSpell {
+func NewSymSpellWithLoadBigramDictionary(vocabDirPath, bigramDirPath, exactDirPath string, termIndex, countIndex int, opt ...options.Options) SymSpell {
 	symspell := NewSymSpell(opt...)
 	ok, err := symspell.LoadDictionary(vocabDirPath, termIndex, countIndex, " ")
 	if err != nil || !ok {
@@ -42,6 +42,12 @@ func NewSymSpellWithLoadBigramDictionary(vocabDirPath, bigramDirPath string, ter
 			log.Println("[Error] ", err)
 		}
 	}
+	if exactDirPath != "" {
+		ok, err = symspell.LoadExactDictionary(exactDirPath, " ")
+		if err != nil || !ok {
+			log.Println("[Error] ", err)
+		}
+	}
 	return symspell
 }
 
@@ -50,4 +56,5 @@ type SymSpell interface {
 	LookupCompound(phrase string, maxEditDistance int) *items.SuggestItem
 	LoadBigramDictionary(corpusPath string, termIndex, countIndex int, separator string) (bool, error)
 	LoadDictionary(corpusPath string, termIndex int, countIndex int, separator string) (bool, error)
+	LoadExactDictionary(corpusPath string, separator string) (bool, error)
 }

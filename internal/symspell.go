@@ -3,6 +3,7 @@ package internal
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"os"
@@ -27,6 +28,7 @@ type SymSpell struct {
 	Words                     map[string]int
 	BelowThresholdWords       map[string]int
 	Deletes                   map[string][]string
+	ExactTransform            map[string]string
 	maxLength                 int
 	distanceComparer          editdistance.IEditDistance
 	// lookup compound
@@ -66,6 +68,7 @@ func NewSymSpell(opt ...options.Options) (*SymSpell, error) {
 		Words:                     make(map[string]int),
 		BelowThresholdWords:       make(map[string]int),
 		Deletes:                   make(map[string][]string),
+		ExactTransform:            make(map[string]string),
 		distanceComparer:          editdistance.NewEditDistance(editdistance.DamerauLevenshtein), // todo add more edit distance algorithms
 		maxLength:                 0,
 		Bigrams:                   make(map[string]int),
@@ -209,4 +212,50 @@ func incrementCount(count, countPrevious int) int {
 		return countPrevious + count
 	}
 	return math.MaxInt64
+}
+
+func (s *SymSpell) LoadExactDictionary(
+	corpusPath string,
+	separator string,
+) (bool, error) {
+	if corpusPath == "" {
+		return false, fmt.Errorf("corpus path cannot be empty")
+	}
+	// Check if the file exists
+	file, err := os.Open(corpusPath)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	// Use the stream-based loading function
+	return s.LoadExactDictionaryStream(file, separator), nil
+}
+
+func (s *SymSpell) LoadExactDictionaryStream(corpusStream *os.File, separator string) bool {
+	scanner := bufio.NewScanner(corpusStream)
+	// Define minimum parts depending on the separator
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		// Split line by the separator
+		var parts []string
+		if separator == "" {
+			parts = strings.Fields(line)
+		} else {
+			parts = strings.Split(line, separator)
+		}
+		if len(parts) < 2 {
+			continue
+		}
+		// Parse count
+		exactMatch := parts[1]
+		// Create the key
+		key := parts[0]
+		// Add to Exact Transform dictionary
+		s.ExactTransform[key] = exactMatch
+	}
+	return true
 }
