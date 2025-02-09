@@ -194,6 +194,22 @@ func TestSymspellLookupCompoundUnigram(t *testing.T) {
 			want: "بیمارستان ا",
 		},
 		{
+			name: "Test Min Character 2",
+			args: args{
+				a:               "بیمارستان اما",
+				maxEditDistance: 3,
+			},
+			want: "بیمارستان اما",
+		},
+		{
+			name: "Test Min Character 3",
+			args: args{
+				a:               "ا ب ث",
+				maxEditDistance: 3,
+			},
+			want: "ا ب ث",
+		},
+		{
 			name: "Split Number",
 			args: args{
 				a:               "17شهریور",
@@ -245,7 +261,7 @@ func TestSymspellLookupCompoundUnigram(t *testing.T) {
 		options.WithMaxDictionaryEditDistance(3),
 		options.WithSplitItemThreshold(100),
 		options.WithSplitWordBySpace(),
-		options.WithMinimumCharacterToChange(2),
+		options.WithMinimumCharacterToChange(3),
 		options.WithSplitWordAndNumbers(),
 	)
 	for _, tt := range tests {
