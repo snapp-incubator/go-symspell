@@ -249,6 +249,30 @@ func TestSymspellLookupCompoundUnigram(t *testing.T) {
 			},
 			want: "تهران خیابان ازادی",
 		},
+		{
+			name: "Should not change last one single character",
+			args: args{
+				a:               "بیمارستان خ",
+				maxEditDistance: 3,
+			},
+			want: "بیمارستان خ",
+		},
+		{
+			name: "should not change single char",
+			args: args{
+				a:               "م",
+				maxEditDistance: 3,
+			},
+			want: "م",
+		},
+		{
+			name: "should change last word if bigger that minimum to change",
+			args: args{
+				a:               "میدون",
+				maxEditDistance: 3,
+			},
+			want: "میدان",
+		},
 	}
 	symSpell := NewSymSpellWithLoadBigramDictionary(
 		"internal/tests/vocab_fa.txt",
