@@ -210,12 +210,13 @@ func (s *SymSpell) updateSuggestions(suggestion string, cp *candidateProcessor) 
 }
 
 func (s *SymSpell) updateBestSuggestion(cp *candidateProcessor, suggestionCount int, item items.SuggestItem) bool {
-	if cp.verbosity == verbositypkg.Closest {
+	switch cp.verbosity {
+	case verbositypkg.Closest:
 		// Keep only the closest suggestions
 		if cp.distance < cp.maxEditDistance2 {
 			cp.suggestions = []items.SuggestItem{}
 		}
-	} else if cp.verbosity == verbositypkg.Top {
+	case verbositypkg.Top:
 		// Keep the top suggestion based on count or distance
 		if cp.distance < cp.maxEditDistance2 || suggestionCount > cp.suggestions[0].Count {
 			cp.maxEditDistance2 = cp.distance
